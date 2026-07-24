@@ -9,38 +9,255 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ReunioesRouteImport } from './routes/reunioes'
+import { Route as MercadoRouteImport } from './routes/mercado'
+import { Route as LesoesRouteImport } from './routes/lesoes'
+import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as ElencoRouteImport } from './routes/elenco'
+import { Route as DepartamentosRouteImport } from './routes/departamentos'
+import { Route as DecisoesRouteImport } from './routes/decisoes'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as CalendarioRouteImport } from './routes/calendario'
+import { Route as BaseRouteImport } from './routes/base'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChatAgentIdRouteImport } from './routes/chat.$agentId'
 
+const ReunioesRoute = ReunioesRouteImport.update({
+  id: '/reunioes',
+  path: '/reunioes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MercadoRoute = MercadoRouteImport.update({
+  id: '/mercado',
+  path: '/mercado',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LesoesRoute = LesoesRouteImport.update({
+  id: '/lesoes',
+  path: '/lesoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InboxRoute = InboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ElencoRoute = ElencoRouteImport.update({
+  id: '/elenco',
+  path: '/elenco',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DepartamentosRoute = DepartamentosRouteImport.update({
+  id: '/departamentos',
+  path: '/departamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecisoesRoute = DecisoesRouteImport.update({
+  id: '/decisoes',
+  path: '/decisoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarioRoute = CalendarioRouteImport.update({
+  id: '/calendario',
+  path: '/calendario',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BaseRoute = BaseRouteImport.update({
+  id: '/base',
+  path: '/base',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChatAgentIdRoute = ChatAgentIdRouteImport.update({
+  id: '/chat/$agentId',
+  path: '/chat/$agentId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/base': typeof BaseRoute
+  '/calendario': typeof CalendarioRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/decisoes': typeof DecisoesRoute
+  '/departamentos': typeof DepartamentosRoute
+  '/elenco': typeof ElencoRoute
+  '/inbox': typeof InboxRoute
+  '/lesoes': typeof LesoesRoute
+  '/mercado': typeof MercadoRoute
+  '/reunioes': typeof ReunioesRoute
+  '/chat/$agentId': typeof ChatAgentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/base': typeof BaseRoute
+  '/calendario': typeof CalendarioRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/decisoes': typeof DecisoesRoute
+  '/departamentos': typeof DepartamentosRoute
+  '/elenco': typeof ElencoRoute
+  '/inbox': typeof InboxRoute
+  '/lesoes': typeof LesoesRoute
+  '/mercado': typeof MercadoRoute
+  '/reunioes': typeof ReunioesRoute
+  '/chat/$agentId': typeof ChatAgentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/base': typeof BaseRoute
+  '/calendario': typeof CalendarioRoute
+  '/configuracoes': typeof ConfiguracoesRoute
+  '/decisoes': typeof DecisoesRoute
+  '/departamentos': typeof DepartamentosRoute
+  '/elenco': typeof ElencoRoute
+  '/inbox': typeof InboxRoute
+  '/lesoes': typeof LesoesRoute
+  '/mercado': typeof MercadoRoute
+  '/reunioes': typeof ReunioesRoute
+  '/chat/$agentId': typeof ChatAgentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/base'
+    | '/calendario'
+    | '/configuracoes'
+    | '/decisoes'
+    | '/departamentos'
+    | '/elenco'
+    | '/inbox'
+    | '/lesoes'
+    | '/mercado'
+    | '/reunioes'
+    | '/chat/$agentId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/base'
+    | '/calendario'
+    | '/configuracoes'
+    | '/decisoes'
+    | '/departamentos'
+    | '/elenco'
+    | '/inbox'
+    | '/lesoes'
+    | '/mercado'
+    | '/reunioes'
+    | '/chat/$agentId'
+  id:
+    | '__root__'
+    | '/'
+    | '/base'
+    | '/calendario'
+    | '/configuracoes'
+    | '/decisoes'
+    | '/departamentos'
+    | '/elenco'
+    | '/inbox'
+    | '/lesoes'
+    | '/mercado'
+    | '/reunioes'
+    | '/chat/$agentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BaseRoute: typeof BaseRoute
+  CalendarioRoute: typeof CalendarioRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  DecisoesRoute: typeof DecisoesRoute
+  DepartamentosRoute: typeof DepartamentosRoute
+  ElencoRoute: typeof ElencoRoute
+  InboxRoute: typeof InboxRoute
+  LesoesRoute: typeof LesoesRoute
+  MercadoRoute: typeof MercadoRoute
+  ReunioesRoute: typeof ReunioesRoute
+  ChatAgentIdRoute: typeof ChatAgentIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reunioes': {
+      id: '/reunioes'
+      path: '/reunioes'
+      fullPath: '/reunioes'
+      preLoaderRoute: typeof ReunioesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mercado': {
+      id: '/mercado'
+      path: '/mercado'
+      fullPath: '/mercado'
+      preLoaderRoute: typeof MercadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lesoes': {
+      id: '/lesoes'
+      path: '/lesoes'
+      fullPath: '/lesoes'
+      preLoaderRoute: typeof LesoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inbox': {
+      id: '/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof InboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/elenco': {
+      id: '/elenco'
+      path: '/elenco'
+      fullPath: '/elenco'
+      preLoaderRoute: typeof ElencoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/departamentos': {
+      id: '/departamentos'
+      path: '/departamentos'
+      fullPath: '/departamentos'
+      preLoaderRoute: typeof DepartamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decisoes': {
+      id: '/decisoes'
+      path: '/decisoes'
+      fullPath: '/decisoes'
+      preLoaderRoute: typeof DecisoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendario': {
+      id: '/calendario'
+      path: '/calendario'
+      fullPath: '/calendario'
+      preLoaderRoute: typeof CalendarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/base': {
+      id: '/base'
+      path: '/base'
+      fullPath: '/base'
+      preLoaderRoute: typeof BaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +265,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chat/$agentId': {
+      id: '/chat/$agentId'
+      path: '/chat/$agentId'
+      fullPath: '/chat/$agentId'
+      preLoaderRoute: typeof ChatAgentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BaseRoute: BaseRoute,
+  CalendarioRoute: CalendarioRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
+  DecisoesRoute: DecisoesRoute,
+  DepartamentosRoute: DepartamentosRoute,
+  ElencoRoute: ElencoRoute,
+  InboxRoute: InboxRoute,
+  LesoesRoute: LesoesRoute,
+  MercadoRoute: MercadoRoute,
+  ReunioesRoute: ReunioesRoute,
+  ChatAgentIdRoute: ChatAgentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
