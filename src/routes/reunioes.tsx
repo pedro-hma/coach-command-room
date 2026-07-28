@@ -1,15 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AGENTS, AGENT_ORDER } from "@/lib/agents";
-import type { AgentId } from "@/lib/types";
+import type { AgentId, ClubState } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { generateReply } from "@/lib/engine";
+import { responderAgente } from "@/lib/ai.functions";
+import { contextoClube, personaAgente } from "@/lib/ai-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Gavel, Users2, Sparkles } from "lucide-react";
+
 
 export const Route = createFileRoute("/reunioes")({
   component: Reunioes,
