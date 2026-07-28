@@ -1,15 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AGENTS, AGENT_ORDER } from "@/lib/agents";
-import type { AgentId } from "@/lib/types";
+import type { AgentId, ClubState } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { generateReply } from "@/lib/engine";
+import { responderAgente } from "@/lib/ai.functions";
+import { contextoClube, personaAgente } from "@/lib/ai-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Gavel, Users2, Sparkles } from "lucide-react";
+
 
 export const Route = createFileRoute("/reunioes")({
   component: Reunioes,
@@ -34,31 +38,70 @@ function Reunioes() {
   const [tema, setTema] = useState(TEMAS[0]);
   const [selecionados, setSelecionados] = useState<AgentId[]>(["auxiliar", "diretor", "analise", "capitao"]);
   const [reuniaoAtual, setReuniaoAtual] = useState<null | ReturnType<typeof addMeeting>>(null);
+  const [carregando, setCarregando] = useState(false);
+  const chamarIA = useServerFn(responderAgente);
 
   function toggle(id: AgentId) {
     setSelecionados((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   }
 
-  function convocar() {
+  async function opiniaoIA(a: AgentId, ctx: string) {
+    try {
+      const r = await chamarIA({
+        data: {
+          persona: personaAgente(a, state.confianca[a]),
+          contexto: ctx,
+          pergunta: `Estamos em reunião da comissão técnica sobre: "${tema}". Dê sua posição clara sobre o tema, do seu ponto de vista profissional.`,
+          historico: [],
+        },
+      });
+      if (r.texto) return r.texto;
+    } catch {
+      /* fallback abaixo */
+    }
+    return generateReply(a, tema, { state });
+  }
+
+  async function convocar() {
     if (!tema.trim() || selecionados.length < 2) {
       toast.error("Escolha um tema e ao menos 2 participantes");
       return;
     }
-    const opinioes = selecionados.map((a) => ({
-      agente: a,
-      texto: generateReply(a, tema, { state }),
-    }));
-    const sintese = sintetizar(tema, opinioes, state);
-    const rec = recomendar(tema, opinioes);
-    const m = addMeeting({
-      tema,
-      participantes: selecionados,
-      opinioes,
-      sintese,
-      recomendacao: rec,
-    });
+    setCarregando(true);
+    const ctx = contextoClube(state);
+    const opinioes = await Promise.all(
+      selecionados.map(async (a) => ({ agente: a, texto: await opiniaoIA(a, ctx) })),
+    );
+
+    let sintese = "";
+    let rec = recomendar(tema, opinioes);
+    try {
+      const r = await chamarIA({
+        data: {
+          persona:
+            "Você é o Chefe de Gabinete do treinador. Sintetize a reunião de forma objetiva: convergências, divergências e riscos.",
+          contexto: ctx,
+          pergunta: `Tema: "${tema}".\nOpiniões:\n${opinioes
+            .map((o) => `${AGENTS[o.agente].cargo}: ${o.texto}`)
+            .join("\n")}\n\nEscreva 2 a 4 frases de síntese e, na última linha, uma recomendação começando com "Recomendação:".`,
+          historico: [],
+        },
+      });
+      if (r.texto) {
+        const partes = r.texto.split(/Recomenda[çc][ãa]o:/i);
+        sintese = partes[0].trim();
+        if (partes[1]?.trim()) rec = partes[1].trim();
+      }
+    } catch {
+      /* fallback abaixo */
+    }
+    if (!sintese) sintese = sintetizar(tema, opinioes, state);
+
+    const m = addMeeting({ tema, participantes: selecionados, opinioes, sintese, recomendacao: rec });
     setReuniaoAtual(m);
+    setCarregando(false);
   }
+
 
   function virarDecisao() {
     if (!reuniaoAtual) return;
@@ -111,7 +154,10 @@ function Reunioes() {
                 })}
               </div>
             </div>
-            <Button onClick={convocar} className="w-full">Convocar reunião</Button>
+            <Button onClick={convocar} disabled={carregando} className="w-full">
+              {carregando ? "Reunindo departamentos..." : "Convocar reunião"}
+            </Button>
+
           </div>
         </Card>
 
@@ -174,7 +220,7 @@ function Reunioes() {
   );
 }
 
-function sintetizar(tema: string, opinioes: { agente: AgentId; texto: string }[], _s: any) {
+function sintetizar(tema: string, opinioes: { agente: AgentId; texto: string }[], _s: ClubState) {
   const dif = opinioes.length;
   return `Analisei ${dif} posições sobre "${tema}". Há convergência sobre urgência do tema, com divergência de intensidade entre departamentos técnicos e institucionais.\nRiscos: impacto na moral do vestiário, custo financeiro e leitura da imprensa.\nConflitos: prioridade de gasto vs. resultado esportivo imediato.`;
 }

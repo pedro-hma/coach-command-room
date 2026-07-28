@@ -1,15 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AGENTS } from "@/lib/agents";
 import type { AgentId, Message } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { generateReply, suggestForward } from "@/lib/engine";
+import { responderAgente } from "@/lib/ai.functions";
+import { contextoClube, personaAgente } from "@/lib/ai-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CornerUpRight, Gavel, Send } from "lucide-react";
+import { CornerUpRight, Gavel, Send, Sparkles } from "lucide-react";
+
 
 export const Route = createFileRoute("/chat/$agentId")({
   component: Chat,
@@ -31,37 +35,61 @@ function Chat() {
   const { state, addMessage, addDecision, addInbox } = useStore();
   const navigate = useNavigate();
   const [input, setInput] = useState("");
+  const [pensando, setPensando] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const chamarIA = useServerFn(responderAgente);
 
   const msgs = state.chats[id] ?? [];
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [msgs.length]);
+  }, [msgs.length, pensando]);
 
   if (!agent) {
     return <div className="p-6">Departamento não encontrado.</div>;
   }
 
-  function enviar(texto?: string) {
+  async function enviar(texto?: string) {
     const t = (texto ?? input).trim();
-    if (!t) return;
+    if (!t || pensando) return;
     const userMsg: Message = { id: `u-${Date.now()}`, autor: "treinador", texto: t, ts: Date.now() };
     addMessage(id, userMsg);
     setInput("");
-    setTimeout(() => {
-      const resposta = generateReply(id, t, { state });
-      const fwd = suggestForward(t);
-      const bot: Message = {
-        id: `a-${Date.now()}`,
-        autor: id,
-        texto: resposta,
-        ts: Date.now(),
-        meta: { encaminhadoPara: fwd && fwd !== id ? fwd : undefined, sugestoes: agent.sugestoes },
-      };
-      addMessage(id, bot);
-    }, 350);
+    setPensando(true);
+
+    let resposta = "";
+    try {
+      const r = await chamarIA({
+        data: {
+          persona: personaAgente(id, state.confianca[id]),
+          contexto: contextoClube(state),
+          pergunta: t,
+          historico: msgs.slice(-8).map((m) => ({
+            role: m.autor === "treinador" ? ("user" as const) : ("assistant" as const),
+            content: m.texto,
+          })),
+        },
+      });
+      if (r.texto) resposta = r.texto;
+      else if (r.erro === "limite") toast.error("Muitas mensagens seguidas. Aguarde alguns segundos.");
+      else if (r.erro === "creditos") toast.error("Créditos de IA esgotados no workspace.");
+    } catch {
+      /* usa o motor local abaixo */
+    }
+    if (!resposta) resposta = generateReply(id, t, { state });
+
+    const fwd = suggestForward(t);
+    const bot: Message = {
+      id: `a-${Date.now()}`,
+      autor: id,
+      texto: resposta,
+      ts: Date.now(),
+      meta: { encaminhadoPara: fwd && fwd !== id ? fwd : undefined, sugestoes: agent.sugestoes },
+    };
+    addMessage(id, bot);
+    setPensando(false);
   }
+
 
   function encaminhar(msg: Message) {
     const alvo = msg.meta?.encaminhadoPara;
@@ -102,7 +130,14 @@ function Chat() {
           {msgs.map((m) => (
             <MessageBubble key={m.id} msg={m} onForward={() => encaminhar(m)} onDecision={() => registrarDecisao(m)} />
           ))}
+          {pensando && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Sparkles className="h-3 w-3 animate-pulse text-primary" />
+              {agent.nome} está pensando...
+            </div>
+          )}
           <div ref={endRef} />
+
         </div>
 
         <div className="border-t border-border/60 bg-card/60 p-3">
@@ -123,7 +158,7 @@ function Chat() {
               placeholder={`Fale com ${agent.nome}...`}
               className="min-h-[52px] resize-none"
             />
-            <Button onClick={() => enviar()} className="h-auto"><Send className="h-4 w-4" /></Button>
+            <Button onClick={() => enviar()} disabled={pensando} className="h-auto"><Send className="h-4 w-4" /></Button>
           </div>
         </div>
       </Card>
