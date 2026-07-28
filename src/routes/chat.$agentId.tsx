@@ -158,7 +158,7 @@ function Chat() {
               placeholder={`Fale com ${agent.nome}...`}
               className="min-h-[52px] resize-none"
             />
-            <Button onClick={() => enviar()} className="h-auto"><Send className="h-4 w-4" /></Button>
+            <Button onClick={() => enviar()} disabled={pensando} className="h-auto"><Send className="h-4 w-4" /></Button>
           </div>
         </div>
       </Card>
