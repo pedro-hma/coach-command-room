@@ -16,8 +16,8 @@ export interface Agent {
   cargo: string;
   personalidade: string;
   responsabilidade: string;
-  confianca: number; // 0-100
-  cor: string; // tailwind class fragment
+  confianca: number;
+  cor: string;
   emoji: string;
   sugestoes: string[];
 }
@@ -30,18 +30,34 @@ export interface Message {
   meta?: { encaminhadoPara?: AgentId; sugestoes?: string[] };
 }
 
+export interface DataSource {
+  nome: string;
+  atualizadoEm: string;
+  url?: string;
+}
+
 export interface Player {
   id: string;
   nome: string;
+  nomeCompleto?: string;
   pos: string;
   idade: number;
+  nacionalidades?: string[];
   overall: number;
+  potencial?: number;
+  valorMercado?: number;
+  moedaValor?: "EUR" | "BRL";
   moral: number;
   forma: number;
+  confiancaTreinador?: number;
+  papelElenco?: string;
   lesionado?: boolean;
   jovem?: boolean;
   capitao?: boolean;
   contratoAte: string;
+  disponivelNoJogo?: boolean;
+  idExterno?: { transfermarkt?: string; ea?: string; wikidata?: string };
+  fonte?: DataSource;
 }
 
 export interface Injury {
@@ -52,7 +68,7 @@ export interface Injury {
 
 export interface Fixture {
   id: string;
-  data: string; // ISO
+  data: string;
   adversario: string;
   competicao: string;
   casa: boolean;
@@ -65,7 +81,7 @@ export interface Decision {
   ts: number;
   titulo: string;
   descricao: string;
-  origem: string; // agente ou "reunião"
+  origem: string;
   impacto?: { moral?: number; orcamento?: number; prioridade?: string };
 }
 
@@ -76,6 +92,8 @@ export interface InboxItem {
   para: AgentId;
   assunto: string;
   lido?: boolean;
+  prioridade?: "baixa" | "media" | "alta";
+  jogadorId?: string;
 }
 
 export interface Meeting {
@@ -99,15 +117,22 @@ export interface ClubState {
   onboarded: boolean;
   clube: {
     nome: string;
+    nomeCompleto?: string;
     treinador: string;
     divisao: string;
+    pais?: string;
     temporada: string;
-    orcamento: number; // em R$
-    moralElenco: number; // 0-100
+    orcamento: number;
+    moeda?: "EUR" | "BRL";
+    moralElenco: number;
+    pressaoDiretoria?: number;
+    posicaoLiga?: number;
+    pontos?: number;
     prioridadeJanela: "defesa" | "meio" | "ataque" | "goleiro" | "indefinida";
     forma: string;
     proximoJogoDias: number;
     proximoAdversario: string;
+    fonte?: DataSource;
   };
   jogadores: Player[];
   lesoes: Injury[];
