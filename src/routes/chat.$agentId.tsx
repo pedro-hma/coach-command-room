@@ -35,37 +35,61 @@ function Chat() {
   const { state, addMessage, addDecision, addInbox } = useStore();
   const navigate = useNavigate();
   const [input, setInput] = useState("");
+  const [pensando, setPensando] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const chamarIA = useServerFn(responderAgente);
 
   const msgs = state.chats[id] ?? [];
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [msgs.length]);
+  }, [msgs.length, pensando]);
 
   if (!agent) {
     return <div className="p-6">Departamento não encontrado.</div>;
   }
 
-  function enviar(texto?: string) {
+  async function enviar(texto?: string) {
     const t = (texto ?? input).trim();
-    if (!t) return;
+    if (!t || pensando) return;
     const userMsg: Message = { id: `u-${Date.now()}`, autor: "treinador", texto: t, ts: Date.now() };
     addMessage(id, userMsg);
     setInput("");
-    setTimeout(() => {
-      const resposta = generateReply(id, t, { state });
-      const fwd = suggestForward(t);
-      const bot: Message = {
-        id: `a-${Date.now()}`,
-        autor: id,
-        texto: resposta,
-        ts: Date.now(),
-        meta: { encaminhadoPara: fwd && fwd !== id ? fwd : undefined, sugestoes: agent.sugestoes },
-      };
-      addMessage(id, bot);
-    }, 350);
+    setPensando(true);
+
+    let resposta = "";
+    try {
+      const r = await chamarIA({
+        data: {
+          persona: personaAgente(id, state.confianca[id]),
+          contexto: contextoClube(state),
+          pergunta: t,
+          historico: msgs.slice(-8).map((m) => ({
+            role: m.autor === "treinador" ? ("user" as const) : ("assistant" as const),
+            content: m.texto,
+          })),
+        },
+      });
+      if (r.texto) resposta = r.texto;
+      else if (r.erro === "limite") toast.error("Muitas mensagens seguidas. Aguarde alguns segundos.");
+      else if (r.erro === "creditos") toast.error("Créditos de IA esgotados no workspace.");
+    } catch {
+      /* usa o motor local abaixo */
+    }
+    if (!resposta) resposta = generateReply(id, t, { state });
+
+    const fwd = suggestForward(t);
+    const bot: Message = {
+      id: `a-${Date.now()}`,
+      autor: id,
+      texto: resposta,
+      ts: Date.now(),
+      meta: { encaminhadoPara: fwd && fwd !== id ? fwd : undefined, sugestoes: agent.sugestoes },
+    };
+    addMessage(id, bot);
+    setPensando(false);
   }
+
 
   function encaminhar(msg: Message) {
     const alvo = msg.meta?.encaminhadoPara;
