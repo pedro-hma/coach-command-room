@@ -38,31 +38,70 @@ function Reunioes() {
   const [tema, setTema] = useState(TEMAS[0]);
   const [selecionados, setSelecionados] = useState<AgentId[]>(["auxiliar", "diretor", "analise", "capitao"]);
   const [reuniaoAtual, setReuniaoAtual] = useState<null | ReturnType<typeof addMeeting>>(null);
+  const [carregando, setCarregando] = useState(false);
+  const chamarIA = useServerFn(responderAgente);
 
   function toggle(id: AgentId) {
     setSelecionados((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   }
 
-  function convocar() {
+  async function opiniaoIA(a: AgentId, ctx: string) {
+    try {
+      const r = await chamarIA({
+        data: {
+          persona: personaAgente(a, state.confianca[a]),
+          contexto: ctx,
+          pergunta: `Estamos em reunião da comissão técnica sobre: "${tema}". Dê sua posição clara sobre o tema, do seu ponto de vista profissional.`,
+          historico: [],
+        },
+      });
+      if (r.texto) return r.texto;
+    } catch {
+      /* fallback abaixo */
+    }
+    return generateReply(a, tema, { state });
+  }
+
+  async function convocar() {
     if (!tema.trim() || selecionados.length < 2) {
       toast.error("Escolha um tema e ao menos 2 participantes");
       return;
     }
-    const opinioes = selecionados.map((a) => ({
-      agente: a,
-      texto: generateReply(a, tema, { state }),
-    }));
-    const sintese = sintetizar(tema, opinioes, state);
-    const rec = recomendar(tema, opinioes);
-    const m = addMeeting({
-      tema,
-      participantes: selecionados,
-      opinioes,
-      sintese,
-      recomendacao: rec,
-    });
+    setCarregando(true);
+    const ctx = contextoClube(state);
+    const opinioes = await Promise.all(
+      selecionados.map(async (a) => ({ agente: a, texto: await opiniaoIA(a, ctx) })),
+    );
+
+    let sintese = "";
+    let rec = recomendar(tema, opinioes);
+    try {
+      const r = await chamarIA({
+        data: {
+          persona:
+            "Você é o Chefe de Gabinete do treinador. Sintetize a reunião de forma objetiva: convergências, divergências e riscos.",
+          contexto: ctx,
+          pergunta: `Tema: "${tema}".\nOpiniões:\n${opinioes
+            .map((o) => `${AGENTS[o.agente].cargo}: ${o.texto}`)
+            .join("\n")}\n\nEscreva 2 a 4 frases de síntese e, na última linha, uma recomendação começando com "Recomendação:".`,
+          historico: [],
+        },
+      });
+      if (r.texto) {
+        const partes = r.texto.split(/Recomenda[çc][ãa]o:/i);
+        sintese = partes[0].trim();
+        if (partes[1]?.trim()) rec = partes[1].trim();
+      }
+    } catch {
+      /* fallback abaixo */
+    }
+    if (!sintese) sintese = sintetizar(tema, opinioes, state);
+
+    const m = addMeeting({ tema, participantes: selecionados, opinioes, sintese, recomendacao: rec });
     setReuniaoAtual(m);
+    setCarregando(false);
   }
+
 
   function virarDecisao() {
     if (!reuniaoAtual) return;
