@@ -1,15 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AGENTS } from "@/lib/agents";
 import type { AgentId, Message } from "@/lib/types";
 import { useStore } from "@/lib/store";
 import { generateReply, suggestForward } from "@/lib/engine";
+import { responderAgente } from "@/lib/ai.functions";
+import { contextoClube, personaAgente } from "@/lib/ai-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CornerUpRight, Gavel, Send } from "lucide-react";
+import { CornerUpRight, Gavel, Send, Sparkles } from "lucide-react";
+
 
 export const Route = createFileRoute("/chat/$agentId")({
   component: Chat,
