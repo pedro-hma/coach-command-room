@@ -220,7 +220,7 @@ function Reunioes() {
   );
 }
 
-function sintetizar(tema: string, opinioes: { agente: AgentId; texto: string }[], _s: any) {
+function sintetizar(tema: string, opinioes: { agente: AgentId; texto: string }[], _s: ClubState) {
   const dif = opinioes.length;
   return `Analisei ${dif} posições sobre "${tema}". Há convergência sobre urgência do tema, com divergência de intensidade entre departamentos técnicos e institucionais.\nRiscos: impacto na moral do vestiário, custo financeiro e leitura da imprensa.\nConflitos: prioridade de gasto vs. resultado esportivo imediato.`;
 }
