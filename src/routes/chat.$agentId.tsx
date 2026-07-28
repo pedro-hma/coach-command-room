@@ -130,7 +130,14 @@ function Chat() {
           {msgs.map((m) => (
             <MessageBubble key={m.id} msg={m} onForward={() => encaminhar(m)} onDecision={() => registrarDecisao(m)} />
           ))}
+          {pensando && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Sparkles className="h-3 w-3 animate-pulse text-primary" />
+              {agent.nome} está pensando...
+            </div>
+          )}
           <div ref={endRef} />
+
         </div>
 
         <div className="border-t border-border/60 bg-card/60 p-3">
