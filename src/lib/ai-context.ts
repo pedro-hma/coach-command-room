@@ -1,25 +1,36 @@
 import type { AgentId, ClubState } from "./types";
 import { AGENTS } from "./agents";
 
-/** Resumo textual do estado do clube usado como contexto dos agentes de IA. */
+function dinheiro(valor: number, moeda = "EUR") {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: moeda,
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(valor);
+}
+
+/** Resumo do mundo da carreira. Identidade/contrato são dados reais; moral e forma pertencem ao save. */
 export function contextoClube(s: ClubState): string {
   const linhas: string[] = [];
   linhas.push(
-    `Clube: ${s.clube.nome ?? "clube"} | Temporada ${s.clube.temporada} | Forma recente: ${s.clube.forma}`,
+    `Clube: ${s.clube.nome} | ${s.clube.divisao}${s.clube.pais ? `, ${s.clube.pais}` : ""} | Temporada ${s.clube.temporada}`,
   );
   linhas.push(
-    `Próximo jogo: ${s.clube.proximoAdversario} em ${s.clube.proximoJogoDias} dias`,
+    `Situação no save: ${s.clube.posicaoLiga ? `${s.clube.posicaoLiga}º lugar, ${s.clube.pontos ?? 0} pontos` : "posição não informada"} | Forma ${s.clube.forma} | Moral ${s.clube.moralElenco}/100 | Pressão ${s.clube.pressaoDiretoria ?? 0}/100`,
+  );
+  linhas.push(`Próximo jogo: ${s.clube.proximoAdversario} em ${s.clube.proximoJogoDias} dias`);
+  linhas.push(
+    `Orçamento livre: ${dinheiro(s.clube.orcamento, s.clube.moeda)} | Prioridade da janela: ${s.clube.prioridadeJanela}`,
   );
   linhas.push(
-    `Orçamento livre: R$ ${(s.clube.orcamento / 1_000_000).toFixed(1)} mi | Prioridade da janela: ${s.clube.prioridadeJanela}`,
-  );
-  linhas.push(
-    "Elenco: " +
+    "Elenco (identidade, idade, posição e contrato são referência real; overall, potencial, moral, forma e confiança são dados simulados do save): " +
       s.jogadores
-        .map(
-          (p) =>
-            `${p.nome} (${p.pos}, ${p.idade}a, geral ${p.overall}, forma ${p.forma}, moral ${p.moral}${p.capitao ? ", capitão" : ""}${p.jovem ? ", base" : ""}${p.lesionado ? ", lesionado" : ""}, contrato até ${p.contratoAte})`,
-        )
+        .map((p) => {
+          const valor = p.valorMercado ? `, valor de referência ${dinheiro(p.valorMercado, p.moedaValor)}` : "";
+          const potencial = p.potencial ? `, potencial ${p.potencial}` : "";
+          return `${p.nome} (${p.pos}, ${p.idade}a, geral ${p.overall}${potencial}, forma ${p.forma}, moral ${p.moral}, confiança ${p.confiancaTreinador ?? "n/i"}${valor}${p.papelElenco ? `, papel ${p.papelElenco}` : ""}${p.capitao ? ", capitão" : ""}${p.jovem ? ", jovem" : ""}${p.lesionado ? ", lesionado" : ""}, contrato até ${p.contratoAte})`;
+        })
         .join("; "),
   );
   linhas.push(
@@ -43,5 +54,5 @@ export function contextoClube(s: ClubState): string {
 
 export function personaAgente(id: AgentId, confianca: number): string {
   const a = AGENTS[id];
-  return `Você é ${a.nome}, ${a.cargo}. Personalidade: ${a.personalidade}. Responsabilidade: ${a.responsabilidade}. Sua confiança atual no treinador é ${confianca}/100. Fale apenas dentro da sua área; se o assunto for de outro departamento, diga a quem encaminhar.`;
+  return `Você é ${a.nome}, ${a.cargo}. Personalidade: ${a.personalidade}. Responsabilidade: ${a.responsabilidade}. Sua confiança atual no treinador é ${confianca}/100. Fale apenas dentro da sua área; se o assunto for de outro departamento, diga a quem encaminhar. Nunca apresente moral, forma, confiança ou conflitos simulados como fatos sobre a pessoa real fora desta carreira.`;
 }
