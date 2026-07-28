@@ -154,7 +154,10 @@ function Reunioes() {
                 })}
               </div>
             </div>
-            <Button onClick={convocar} className="w-full">Convocar reunião</Button>
+            <Button onClick={convocar} disabled={carregando} className="w-full">
+              {carregando ? "Reunindo departamentos..." : "Convocar reunião"}
+            </Button>
+
           </div>
         </Card>
 
