@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
 import { AGENTS } from "@/lib/agents";
 import { cn } from "@/lib/utils";
+import { GithubSyncBadge } from "@/components/GithubSyncBadge";
 import {
   LayoutDashboard, Users, Calendar, HeartPulse, Store, Sprout,
   Gavel, Inbox, Settings, MessagesSquare, Building2, Trophy,
@@ -92,6 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <GithubSyncBadge />
             <div className="hidden sm:block text-right">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Orçamento</div>
               <div className="text-sm font-semibold">

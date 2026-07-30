@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Download, Upload, RefreshCw } from "lucide-react";
+import { Download, Upload, RefreshCw, GitBranch, Loader2 } from "lucide-react";
+import { useGithubSync, INTERVALO_SYNC_MS } from "@/hooks/useGithubSync";
 
 export const Route = createFileRoute("/configuracoes")({
   component: Config,
@@ -71,6 +72,65 @@ function Config() {
           </Button>
         </div>
       </Card>
+
+      <SyncCard />
+
     </div>
   );
 }
+
+function SyncCard() {
+  const { data, isFetching, refetch } = useGithubSync();
+  const divergentes = data ? [...data.divergentes, ...data.somenteLocal, ...data.somenteRemoto] : [];
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-bold flex items-center gap-2"><GitBranch className="h-4 w-4" />Sincronia com o GitHub</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Verificação automática a cada {Math.round(INTERVALO_SYNC_MS / 60000)} minutos contra o último commit do repositório.
+          </p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => refetch()} disabled={isFetching}>
+          {isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+          Verificar agora
+        </Button>
+      </div>
+
+      <div className="mt-4 space-y-2 text-sm">
+        {!data && <div className="text-muted-foreground">Checando…</div>}
+        {data?.erro && <div className="text-danger">Falha ao consultar o GitHub: {data.erro}</div>}
+        {data?.commit && (
+          <div className="rounded-lg border border-border/60 bg-card/60 p-3">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Último commit</div>
+            <div className="font-medium">{data.commit.mensagem.split("\n")[0]}</div>
+            <div className="text-xs text-muted-foreground">
+              {data.commit.sha.slice(0, 7)} • {new Date(data.commit.data).toLocaleString("pt-BR")}
+            </div>
+          </div>
+        )}
+        {data && !data.erro && (
+          data.ok ? (
+            <div className="text-primary">Tudo sincronizado ({data.totalComparados} arquivos comparados).</div>
+          ) : (
+            <div>
+              <div className="text-orange-400">{divergentes.length} arquivo(s) divergente(s):</div>
+              <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+                {data.divergentes.map((f) => <li key={f}>• {f} — conteúdo diferente</li>)}
+                {data.somenteLocal.map((f) => <li key={f}>• {f} — só existe localmente</li>)}
+                {data.somenteRemoto.map((f) => <li key={f}>• {f} — só existe no GitHub</li>)}
+              </ul>
+            </div>
+          )
+        )}
+        {data && (
+          <div className="text-xs text-muted-foreground">
+            Última verificação: {new Date(data.verificadoEm).toLocaleTimeString("pt-BR")}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
