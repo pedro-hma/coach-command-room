@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Download, Upload, RefreshCw } from "lucide-react";
+import { Download, Upload, RefreshCw, GitBranch, Loader2 } from "lucide-react";
+import { useGithubSync, INTERVALO_SYNC_MS } from "@/hooks/useGithubSync";
 
 export const Route = createFileRoute("/configuracoes")({
   component: Config,
@@ -71,6 +72,9 @@ function Config() {
           </Button>
         </div>
       </Card>
+
+      <SyncCard />
+
     </div>
   );
 }
