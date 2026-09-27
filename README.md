@@ -1,96 +1,178 @@
 # Coach Command Room
 
-Companion inteligente para o modo carreira do EA Sports FC. O treinador comanda o clube enquanto departamentos com personalidades próprias analisam o contexto da temporada, participam de reuniões e ajudam a transformar acontecimentos do jogo em decisões de gestão.
+Companion inteligente para transformar uma carreira no EA Sports FC 26 em uma experiência de gestão com memória, contexto e análise.
 
-## Visão do produto
+## Desenvolvimento local — sem Docker
 
-O objetivo não é ser apenas um chat com IA. Cada departamento deve ter responsabilidade, personalidade, nível de confiança e memória das decisões anteriores. O sistema foi pensado para funcionar como uma sala de comando do clube, reunindo comissão técnica, diretoria, departamento médico, desempenho, olheiros, base, finanças, imprensa, capitão e agente.
+O projeto **não exige Docker para desenvolvimento**.
 
-## Estado atual
+### Requisitos
 
-- Dashboard e navegação da carreira
-- Chat individual com departamentos
-- Reuniões com múltiplos agentes e síntese final
-- Contexto do clube, elenco, lesões e decisões recentes
-- Dados de demonstração
-- Integração server-side com o Lovable AI Gateway
-- Persistência local da carreira
+- Node.js 20+
+- npm
+- Python 3.12+
+- PostgreSQL instalado localmente no Windows
 
-## Stack
+O instalador oficial do PostgreSQL para Windows inclui o servidor e o pgAdmin. citeturn0search0
 
-- TanStack Start
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- TanStack Router e React Query
-- Vercel AI SDK
-- Zod
+### 1. Banco de dados
 
-## Desenvolvimento local
+Durante a instalação do PostgreSQL, defina uma senha para o usuário \`postgres\`.
 
-Requisitos: Node.js 20 ou superior e npm.
+No pgAdmin ou no SQL Shell, crie o banco:
 
-```bash
-git clone https://github.com/pedro-hma/coach-command-room.git
-cd coach-command-room
+\`\`\`sql
+CREATE DATABASE coach_command_room;
+\`\`\`
+
+### 2. Backend
+
+Abra um PowerShell na raiz do projeto:
+
+\`\`\`powershell
+cd backend
+
+python -m venv .venv
+.\\.venv\\Scripts\\Activate.ps1
+
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+
+Copy-Item .env.example .env
+\`\`\`
+
+Abra \`backend/.env\` e coloque a senha real do PostgreSQL:
+
+\`\`\`env
+DATABASE_URL=postgresql+asyncpg://postgres:SUA_SENHA@localhost:5432/coach_command_room
+REDIS_URL=redis://localhost:6379/0
+JWT_SECRET=troque-esta-chave-em-desenvolvimento
+CORS_ORIGINS=["http://localhost:5173"]
+\`\`\`
+
+Depois:
+
+\`\`\`powershell
+alembic upgrade head
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+\`\`\`
+
+A API ficará em:
+
+\`\`\`
+http://127.0.0.1:8000
+\`\`\`
+
+Documentação interativa:
+
+\`\`\`
+http://127.0.0.1:8000/docs
+\`\`\`
+
+O FastAPI suporta execução local pelo Uvicorn, inclusive no Windows. citeturn0search2turn0search6
+
+### 3. Frontend
+
+Abra **outro PowerShell** na raiz:
+
+\`\`\`powershell
 npm install
 npm run dev
-```
+\`\`\`
+
+Abra:
+
+\`\`\`
+http://localhost:5173
+\`\`\`
+
+### 4. Ordem para iniciar o projeto
+
+Sempre que quiser trabalhar no projeto:
+
+**Terminal 1 — PostgreSQL**
+
+O serviço do PostgreSQL deve estar iniciado no Windows.
+
+**Terminal 2 — API**
+
+\`\`\`powershell
+cd backend
+.\\.venv\\Scripts\\Activate.ps1
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+\`\`\`
+
+**Terminal 3 — frontend**
+
+\`\`\`powershell
+npm run dev
+\`\`\`
+
+Depois acesse \`http://localhost:5173\`.
+
+## Redis
+
+Redis e Celery fazem parte da arquitetura planejada para tarefas em segundo plano, mas **não são necessários para abrir o frontend nem para subir a API básica local** nesta etapa.
+
+O objetivo é não obrigar o desenvolvimento local a depender de Docker.
 
 ## Variáveis de ambiente
 
-Crie um arquivo `.env.local` na raiz do projeto:
+Nunca versione:
 
-```env
-LOVABLE_API_KEY=sua_chave_do_lovable_ai_gateway
-LOVABLE_AI_MODEL=google/gemini-3.6-flash
-```
+- \`.env\`
+- chaves de API
+- senhas
+- tokens
 
-`LOVABLE_AI_MODEL` é opcional. A chave nunca deve ser enviada ao navegador nem versionada no GitHub.
+O arquivo \`backend/.env.example\` serve apenas como modelo.
 
-## Scripts
+## Arquitetura
 
-```bash
-npm run dev       # ambiente de desenvolvimento
-npm run build     # build de produção
-npm run preview   # pré-visualização do build
-npm run lint      # análise estática
-npm run format    # formatação do código
-```
+\`\`\`
+React / TanStack Start
+        ↓
+FastAPI
+        ↓
+PostgreSQL
 
-## Direção de arquitetura
+Redis + Celery
+(opcionais durante o desenvolvimento inicial)
+\`\`\`
 
-A evolução do projeto deve manter quatro princípios:
+A API é a fonte de verdade dos dados da carreira. O PostgreSQL guarda os dados persistentes e cada carreira é isolada pelo \`career_id\`.
 
-1. O estado da carreira é a fonte de verdade para todas as respostas.
-2. Cada agente fala apenas dentro da própria responsabilidade.
-3. A IA deve admitir quando um dado não existe, sem inventar fatos da carreira.
-4. Mudanças importantes devem ser feitas em branches e revisadas por pull request antes de chegar à `main`.
+## Estado atual
 
-## Roadmap
+- Frontend existente da Central do Treinador
+- Backend FastAPI
+- Autenticação por e-mail/senha
+- JWT
+- Cadastro e login
+- Carreiras isoladas por usuário
+- Estados de carreira: CONFIGURACAO, ATIVA, ENCERRADA e ARQUIVADA
+- PostgreSQL
+- Migração inicial com Alembic
+- CORS configurado para o frontend local
+- Docker mantido apenas como opção futura, não como requisito
 
-### Fundação
+## Próxima camada
 
-- Validação e limites de entrada da IA
-- Tratamento consistente de falhas e respostas vazias
-- Configuração de modelo por ambiente
-- Testes para contexto, decisões e regras de negócio
+1. Conectar o frontend ao FastAPI.
+2. Fazer Cadastro → Login → Nova carreira funcionar pela API.
+3. Criar configuração do treinador.
+4. Criar escolha/configuração do clube.
+5. Persistir a carreira real no PostgreSQL.
+6. Transformar o dashboard atual em painel da carreira real.
+7. Depois avançar para elenco, calendário, mercado, finanças, diretoria, mídia, memória e análise.
 
-### Próxima camada
+## Regra central
 
-- Memória por departamento
-- Eventos automáticos da temporada
-- Caixa de entrada com prioridades
-- Registro de decisões e consequências
-- Importação e exportação de carreira em JSON
+O sistema nunca deve inventar um acontecimento como se tivesse ocorrido no FC 26.
 
-### Expansão
-
-- Mercado de transferências e scouting inteligente
-- Gestão de base e desenvolvimento
-- Imprensa, torcida e ambiente do vestiário
-- Histórico de temporadas e múltiplos clubes
-
-## Segurança
-
-Toda chamada de IA deve permanecer no servidor. Nunca exponha `LOVABLE_API_KEY` em componentes React, variáveis públicas ou commits. Dados fornecidos ao modelo são tratados como contexto informativo e não como instruções de sistema.
+\`\`\`
+FC 26 → evento real
+Fonte externa → dado de referência
+Motor determinístico → cálculo/indicador
+IA → interpretação contextual
+\`\`\`
