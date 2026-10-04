@@ -12,6 +12,7 @@ type Ctx = {
   addInbox: (i: Omit<InboxItem, "id" | "ts">) => void;
   addMeeting: (m: Omit<Meeting, "id" | "ts">) => Meeting;
   resetDemo: () => void;
+  deleteCareer: () => void;
   importJson: (json: string) => boolean;
   exportJson: () => string;
 };
@@ -24,7 +25,6 @@ function load(): ClubState {
     const raw = localStorage.getItem(KEY);
     if (!raw) return createDemoState();
     const parsed = JSON.parse(raw) as ClubState;
-    // basic sanity
     if (!parsed.clube) return createDemoState();
     return parsed;
   } catch {
@@ -94,6 +94,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLocal(fresh);
   }, [state.onboarded]);
 
+  const deleteCareer = useCallback(() => {
+    const fresh = createDemoState();
+    fresh.onboarded = false;
+    try { localStorage.removeItem(KEY); } catch {}
+    setLocal(fresh);
+  }, []);
+
   const exportJson = useCallback(() => JSON.stringify(state, null, 2), [state]);
   const importJson = useCallback((json: string) => {
     try {
@@ -105,8 +112,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Ctx>(() => ({
-    state, setState, addMessage, addDecision, addInbox, addMeeting, resetDemo, importJson, exportJson,
-  }), [state, setState, addMessage, addDecision, addInbox, addMeeting, resetDemo, importJson, exportJson]);
+    state, setState, addMessage, addDecision, addInbox, addMeeting, resetDemo, deleteCareer, importJson, exportJson,
+  }), [state, setState, addMessage, addDecision, addInbox, addMeeting, resetDemo, deleteCareer, importJson, exportJson]);
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }
