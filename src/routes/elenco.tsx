@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import type { Player } from "@/lib/types";
 import { parsePlayerDatabase } from "@/lib/player-import";
@@ -185,5 +185,5 @@ function Elenco() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div><label className="text-xs uppercase tracking-widest text-muted-foreground">{label}</label><div className="mt-1">{children}</div></div>; }
+function Field({ label, children }: { label: string; children: ReactNode }) { return <div><label className="text-xs uppercase tracking-widest text-muted-foreground">{label}</label><div className="mt-1">{children}</div></div>; }
 function Info({ label, value }: { label: string; value: string }) { return <div className="rounded-xl bg-muted/30 p-3"><div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div><div className="mt-1 text-sm font-semibold break-words">{value}</div></div>; }
