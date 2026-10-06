@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ClubState, Decision, InboxItem, Meeting, Message, AgentId } from "./types";
-import { createDemoState } from "./demo-data";
+import { createNewCareerState } from "./demo-data";
 
 const KEY = "mundo-do-clube-v1";
 
@@ -20,20 +20,20 @@ type Ctx = {
 const StoreCtx = createContext<Ctx | null>(null);
 
 function load(): ClubState {
-  if (typeof window === "undefined") return createDemoState();
+  if (typeof window === "undefined") return createNewCareerState();
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return createDemoState();
+    if (!raw) return createNewCareerState();
     const parsed = JSON.parse(raw) as ClubState;
-    if (!parsed.clube) return createDemoState();
+    if (!parsed.clube) return createNewCareerState();
     return parsed;
   } catch {
-    return createDemoState();
+    return createNewCareerState();
   }
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setLocal] = useState<ClubState>(() => createDemoState());
+  const [state, setLocal] = useState<ClubState>(() => createNewCareerState());
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -89,13 +89,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetDemo = useCallback(() => {
-    const fresh = createDemoState();
+    const fresh = createNewCareerState();
     fresh.onboarded = state.onboarded;
     setLocal(fresh);
   }, [state.onboarded]);
 
   const deleteCareer = useCallback(() => {
-    const fresh = createDemoState();
+    const fresh = createNewCareerState();
     fresh.onboarded = false;
     try { localStorage.removeItem(KEY); } catch {}
     setLocal(fresh);
