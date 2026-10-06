@@ -31,7 +31,7 @@ const TEMAS = [
 ];
 
 function Reunioes() {
-  const { state, addMeeting, addDecision } = useStore();
+  const { state, addMeeting, updateMeeting, addDecision } = useStore();
   const [tema, setTema] = useState(TEMAS[0]);
   const [selecionados, setSelecionados] = useState<AgentId[]>(["auxiliar", "diretor", "analise"]);
   const [reuniaoAtual, setReuniaoAtual] = useState<null | ReturnType<typeof addMeeting>>(null);
@@ -105,7 +105,9 @@ function Reunioes() {
   function falarNaReuniao() {
     if (!fala.trim() || !reuniaoAtual) return;
     const turno = { agente: "treinador" as const, texto: fala.trim(), ts: Date.now() };
-    setReuniaoAtual({ ...reuniaoAtual, conversa: [...(reuniaoAtual.conversa ?? []), turno] });
+    const conversa = [...(reuniaoAtual.conversa ?? []), turno];
+    setReuniaoAtual({ ...reuniaoAtual, conversa });
+    updateMeeting(reuniaoAtual.id, { conversa });
     setFala("");
   }
 
