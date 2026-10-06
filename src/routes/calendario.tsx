@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +68,7 @@ function Calendario() {
           {passadas.length === 0 ? <Empty text="Nenhum resultado ainda. Registre o que aconteceu no FC26." /> : (
             <ul className="mt-3 space-y-2">{passadas.map(f => (
               <li key={f.id} className="rounded-xl border border-border/60 bg-card/60 p-3">
-                <div className="flex items-center justify-between gap-3"><div><div className="font-semibold">{f.casa ? "Você" : f.adversário} · {f.adversario}</div><div className="text-xs text-muted-foreground">{new Date(f.data).toLocaleDateString("pt-BR")} · {f.competicao}</div></div><div className="text-2xl font-black">{f.resultado}</div></div>
+                <div className="flex items-center justify-between gap-3"><div><div className="font-semibold">{f.casa ? "Você" : f.adversario} · {f.adversario}</div><div className="text-xs text-muted-foreground">{new Date(f.data).toLocaleDateString("pt-BR")} · {f.competicao}</div></div><div className="text-2xl font-black">{f.resultado}</div></div>
                 {f.observacoes && <p className="mt-2 text-xs text-muted-foreground">{f.observacoes}</p>}
               </li>
             ))}</ul>
@@ -97,5 +97,5 @@ function Calendario() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div><label className="text-xs uppercase tracking-widest text-muted-foreground">{label}</label><div className="mt-1">{children}</div></div>; }
+function Field({ label, children }: { label: string; children: ReactNode }) { return <div><label className="text-xs uppercase tracking-widest text-muted-foreground">{label}</label><div className="mt-1">{children}</div></div>; }
 function Empty({ text }: { text: string }) { return <div className="mt-4 rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">{text}</div>; }
