@@ -1,126 +1,96 @@
 import type { AgentId, ClubState } from "./types";
 import { AGENTS } from "./agents";
 
-interface Ctx {
-  state: ClubState;
+interface Ctx { state: ClubState; }
+
+const has = (t: string, ...words: string[]) => words.some((w) => t.includes(w));
+function money(v: number, moeda = "EUR") {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: moeda, notation: "compact", maximumFractionDigits: 1 }).format(v);
 }
-
-const kw = (t: string, ...arr: string[]) => arr.some((k) => t.toLowerCase().includes(k));
-
-function fmtMoeda(v: number) {
-  return "R$ " + (v / 1_000_000).toFixed(1).replace(".", ",") + " mi";
+function recentResults(s: ClubState) {
+  return s.calendario.filter((f) => f.jogado).slice(-3).reverse();
 }
-
-function lesionadosTxt(s: ClubState) {
-  if (!s.lesoes.length) return "não temos lesionados no momento";
-  return s.lesoes
-    .map((l) => {
-      const j = s.jogadores.find((p) => p.id === l.jogadorId);
-      return `${j?.nome ?? "atleta"} (${l.descricao}, ~${l.semanas} sem)`;
-    })
-    .join("; ");
+function injured(s: ClubState) {
+  return s.lesoes.map((l) => s.jogadores.find((p) => p.id === l.jogadorId)?.nome).filter(Boolean) as string[];
+}
+function rosterSummary(s: ClubState) {
+  if (!s.jogadores.length) return "Ainda não há jogadores cadastrados.";
+  const top = [...s.jogadores].sort((a, b) => b.overall - a.overall).slice(0, 3);
+  return top.map((p) => `${p.nome} (${p.pos}, OVR ${p.overall})`).join(", ");
 }
 
 export function generateReply(agent: AgentId, texto: string, ctx: Ctx): string {
   const s = ctx.state;
-  const a = AGENTS[agent];
   const t = texto.toLowerCase();
-  const jogo = `${s.clube.proximoAdversario} em ${s.clube.proximoJogoDias} dias`;
+  const jogos = recentResults(s);
+  const les = injured(s);
+  const proximo = s.calendario.find((f) => !f.jogado);
+  const a = AGENTS[agent];
 
-  const escalao = s.jogadores;
-  const jovens = escalao.filter((p) => p.jovem);
-  const capitao = escalao.find((p) => p.capitao);
-
-  // por agente
   switch (agent) {
     case "auxiliar":
-      if (kw(t, "escalação", "escalacao", "escalar", "time", "onze"))
-        return `Treinador, para ${jogo} sugiro 4-3-3 com ${capitao?.nome ?? "capitão"} liderando a zaga. Ravi no gol, Caio Vidal como volante de saída e Diego Marín pela direita. ${s.lesoes.length ? `Sem contar com ${lesionadosTxt(s)}.` : ""}`;
-      if (kw(t, "esquema", "tática", "tatica", "formação"))
-        return `Nossa forma recente é ${s.clube.forma}. Manter 4-3-3 nos deu equilíbrio; se o ${s.clube.proximoAdversario} vier fechado, testo 4-2-3-1 no segundo tempo.`;
-      if (kw(t, "último", "ultimo", "jogo", "análise"))
-        return `Vencemos o último 2-1 em casa. Criamos volume pelos lados, mas cedemos transições. Ajuste: pressão no meio-campo.`;
-      return `Certo, treinador. Foco no ${s.clube.proximoAdversario}. O que precisa decidir agora?`;
+      if (!s.jogadores.length) return "Ainda não tenho elenco cadastrado para analisar. Importe a base do FC26 ou monte o elenco real e eu passo a trabalhar em cima dele.";
+      if (has(t, "escala", "time", "onze")) {
+        const top = [...s.jogadores].sort((x, y) => y.overall - x.overall).slice(0, 5);
+        return `Com os dados disponíveis, os maiores OVR do elenco são ${top.map((p) => p.nome + " (" + p.pos + ")").join(", ")}. Não vou inventar uma escalação sem posição, disponibilidade e contexto suficientes.`;
+      }
+      if (has(t, "último", "ultimo", "jogo", "resultado")) {
+        if (!jogos.length) return "Ainda não existe partida registrada nesta carreira. Quando você lançar um resultado do FC26, eu consigo analisar a sequência.";
+        const f = jogos[0];
+        return `O último jogo registrado foi ${f.casa ? "em casa" : "fora"} contra ${f.adversario}, ${f.resultado ?? "sem placar"}. Posso cruzar esse resultado com elenco, lesões e decisões já registradas.`;
+      }
+      return proximo ? `O próximo compromisso registrado é contra ${proximo.adversario}. Antes de mudar o esquema, prefiro cruzar adversário, jogadores disponíveis e o que aconteceu nos últimos jogos.` : "Não há próximo jogo registrado. Cadastre a partida para eu montar a preparação.";
 
-    case "diretor":
-      if (kw(t, "janela", "mercado", "contrat", "reforç"))
-        return `Prioridade atual: ${s.clube.prioridadeJanela}. Orçamento livre: ${fmtMoeda(s.clube.orcamento)}. Tenho 3 nomes mapeados no meio-campo — posso trazer proposta formal se autorizar.`;
-      if (kw(t, "vend", "sair", "saída"))
-        return `Podemos abrir negociação por Hugo Prata (32) e Rodrigo Neves (33). Liberaria cerca de R$ 3,2 mi em folha por temporada.`;
-      if (kw(t, "folha", "salári", "salario"))
-        return `A folha está enxuta para a divisão. Se renovarmos ${capitao?.nome ?? "o capitão"}, ele pesa +12% no bloco defesa.`;
-      if (kw(t, "renov"))
-        return `Sobre renovação: recomendo fechar com ${capitao?.nome} por 2 anos, cláusula de saída em R$ 6 mi. Evita ruído no vestiário.`;
-      return `Estou no seu comando. Prioridade da janela hoje é ${s.clube.prioridadeJanela} — mantemos ou muda?`;
-
-    case "medico":
-      return `Departamento médico: ${lesionadosTxt(s)}. ${s.lesoes.length ? "Nenhum retorna para o próximo jogo com segurança." : "Elenco 100% disponível."} Recomendo carga leve na véspera.`;
-
-    case "preparacao": {
-      const media = Math.round(escalao.reduce((x, p) => x + p.forma, 0) / escalao.length);
-      if (kw(t, "carga", "treino", "forte", "intens"))
-        return `Com jogo em ${s.clube.proximoJogoDias} dias, sugiro 1 sessão forte (D-3), regenerativa D-2 e ativação D-1. Risco de sobrecarga hoje é moderado.`;
-      return `Forma média do elenco: ${media}/100. Atenção redobrada com Rodrigo Neves (66) e retornos pós-lesão.`;
+    case "diretor": {
+      const ativos = [...s.jogadores].sort((x, y) => (y.valorMercado ?? 0) - (x.valorMercado ?? 0)).slice(0, 3);
+      if (has(t, "valor", "ativo", "mercado")) return ativos.length ? `Os maiores valores de mercado cadastrados são ${ativos.map((p) => p.nome + ": " + money(p.valorMercado ?? 0, p.moedaValor)).join("; ")}.` : "Ainda não há valores de mercado cadastrados.";
+      if (has(t, "transfer", "contrat", "janela", "reforç")) return `Orçamento livre registrado: ${money(s.clube.orcamento, s.clube.moeda)}. Não vou criar nomes de mercado: preciso dos jogadores importados/cadastrados para trabalhar com alvos reais.`;
+      return s.jogadores.length ? `Tenho ${s.jogadores.length} atletas no elenco e orçamento de ${money(s.clube.orcamento, s.clube.moeda)}. Diga se quer olhar vendas, salários ou necessidades do elenco.` : "Sem elenco cadastrado, não há base factual para recomendar movimentações de mercado.";
     }
 
-    case "base":
-      if (kw(t, "promov", "subir", "jovem"))
-        return `Miguel Prado (19, meia) está pronto — pediu chance no coletivo dessa semana. Kaique Ferrer e Erik Sanches vêm logo atrás. Total de ${jovens.length} promessas no radar.`;
-      return `Base saudável. Se quiser, promovo Miguel Prado ao grupo principal para o jogo contra ${s.clube.proximoAdversario}.`;
+    case "medico":
+      return les.length ? `Departamento médico: ${les.join(", ")} está(ão) registrado(s) como lesionado(s). Eu só considero prazos informados no save.` : "Nenhuma lesão foi registrada nesta carreira. Não vou inventar diagnóstico ou retorno.";
+
+    case "preparacao":
+      if (!s.jogadores.length) return "Ainda não tenho elenco para calcular carga, forma média ou risco de sobrecarga.";
+      const media = Math.round(s.jogadores.reduce((sum, p) => sum + p.forma, 0) / s.jogadores.length);
+      return proximo ? `Forma média cadastrada: ${media}/100. Com ${proximo.adversario} registrado como próximo jogo, posso ajustar a carga quando tivermos calendário e disponibilidade suficientes.` : `Forma média cadastrada: ${media}/100. Ainda falta um próximo jogo registrado para contextualizar a carga.`;
+
+    case "base": {
+      const jovens = s.jogadores.filter((p) => p.jovem);
+      return jovens.length ? `Tenho ${jovens.length} jogador(es) marcado(s) como jovem/base: ${jovens.map((p) => p.nome).join(", ")}. Posso acompanhar minutos e evolução sem criar atletas fictícios.` : "Nenhum jogador da base foi registrado nesta carreira.";
+    }
 
     case "analise":
-      if (kw(t, "adversár", "próximo", "proximo", s.clube.proximoAdversario.toLowerCase()))
-        return `${s.clube.proximoAdversario} joga em 5-4-1, força na bola parada (4 gols nas últimas 5 partidas). Vulnerável no corredor esquerdo — Dener Alves pode explorar.`;
-      if (kw(t, "fraco", "fraqueza", "problema"))
-        return `Nosso xG concedido cresceu 18% após transição defesa-ataque perdida. Precisamos de meia posicional. Confirma prioridade meio-campo.`;
-      if (kw(t, "chance", "criar"))
-        return `Criamos 62% das chances pelo corredor direito. Diego Marín + Túlio Rezende são o principal duplex.`;
-      return `Tenho relatórios dos últimos 5 jogos. Sobre o que quer que eu me aprofunde?`;
+      if (!jogos.length) return "Ainda não há jogos registrados. Depois do primeiro resultado, consigo construir a análise com base no que realmente aconteceu.";
+      return `Tenho ${jogos.length > 1 ? "uma sequência" : "um jogo"} recente registrada. O último foi contra ${jogos[0].adversario}, ${jogos[0].resultado ?? "sem placar"}. Para análise mais profunda, registre também estatísticas da partida.`;
 
     case "imprensa":
-      if (kw(t, "coletiva", "declaração", "declarac"))
-        return `Sugestão de fala: reforce foco no coletivo, cite o esforço na vitória por 2-1 e evite falar de arbitragem. Torcida quer ouvir sobre reforços.`;
-      if (kw(t, "torcida", "sócio"))
-        return `Termômetro da torcida: 62% aprova o trabalho, cobrança por reforço no meio (${s.clube.prioridadeJanela}). Nenhum protesto agendado.`;
-      return `Posso preparar nota oficial ou roteiro de coletiva. Qual assunto?`;
+      return jogos.length ? `A comunicação deve partir dos fatos registrados: o último resultado disponível é contra ${jogos[0].adversario} (${jogos[0].resultado ?? "placar não informado"}). Não vou inventar reação de torcida ou manchetes.` : "Ainda não há resultado ou acontecimento registrado para eu transformar em narrativa de imprensa.";
 
     case "presidencia":
-      if (kw(t, "orçament", "orcament", "verba", "dinheiro"))
-        return `Orçamento atual: ${fmtMoeda(s.clube.orcamento)}. Só libero aumento se apresentar plano com retorno esportivo claro.`;
-      if (kw(t, "meta", "objetivo"))
-        return `Meta contratual: G-4 na temporada ${s.clube.temporada}. Estamos em rota, mas a diretoria observa cada resultado.`;
-      if (kw(t, "aprovaç", "cargo", "demiss"))
-        return `Você tem meu apoio — hoje. Uma sequência ruim muda o cenário rapidamente.`;
-      return `Fale rápido, treinador, tenho conselho em 20 minutos.`;
+      return `Situação financeira registrada: ${money(s.clube.orcamento, s.clube.moeda)} livres. Pressão da diretoria: ${s.clube.pressaoDiretoria ?? 0}/100. Sem resultados ou metas cadastradas, não vou inventar cobrança.`;
 
     case "agente":
-      if (kw(t, "propost", "clube", "sair"))
-        return `Nada firme no radar. Um clube da 1ª divisão perguntou informalmente — se ganharmos os próximos 3, viro sondagem oficial.`;
-      if (kw(t, "imagem", "mídia"))
-        return `Sua imagem está estável. Um bom desempenho contra ${s.clube.proximoAdversario} melhora sua cotação.`;
-      return `Confia em mim. Foca no jogo — carreira é longa. Quer que eu movimente algo nos bastidores?`;
+      return `Sua carreira está sendo lida somente pelo histórico desta sessão: ${s.decisoes.length} decisão(ões), ${jogos.length} resultado(s) e ${s.jogadores.length} atleta(s) registrados. Uma sondagem só vira fato quando for registrada.`;
 
     case "capitao":
-      if (kw(t, "vestiário", "vestiario", "clima", "grupo"))
-        return `Grupo firme, professor. Só o Rodrigo Neves tá quieto — perdeu espaço. E o pessoal quer saber da minha renovação, tá pesando aqui dentro.`;
-      if (kw(t, "renov"))
-        return `Direto ao ponto: quero ficar. Se a diretoria fizer proposta digna, fecho hoje. Se enrolar, o grupo sente.`;
-      return `Pode contar comigo dentro e fora de campo. Precisa que eu converse com alguém?`;
-  }
+      return s.jogadores.some((p) => p.capitao) ? `O capitão cadastrado é ${s.jogadores.find((p) => p.capitao)?.nome}. Para falar de clima de vestiário, preciso de acontecimentos registrados; não vou inventar conflitos.` : "Nenhum capitão foi cadastrado ainda. Sem esse dado, não vou inventar uma voz do vestiário.";
 
-  return `${a.nome} anotou. Me dá um contexto a mais que já te respondo com base nos dados que temos.`;
+    default:
+      return `${a.nome} precisa de mais contexto da carreira para responder sem especulação.`;
+  }
 }
 
-/** Encaminhamento simples baseado em palavras-chave. */
 export function suggestForward(texto: string): AgentId | null {
   const t = texto.toLowerCase();
-  if (kw(t, "lesão", "lesao", "lesion", "médico", "medico")) return "medico";
-  if (kw(t, "contrat", "vend", "janela", "reforç", "salári")) return "diretor";
-  if (kw(t, "escalação", "escalacao", "tática", "tatica", "treino tático")) return "auxiliar";
-  if (kw(t, "adversár", "análise", "analise", "estatís")) return "analise";
-  if (kw(t, "coletiva", "torcida", "imprensa")) return "imprensa";
-  if (kw(t, "jovem", "base", "promov")) return "base";
-  if (kw(t, "vestiário", "vestiario", "capitão", "capitao")) return "capitao";
-  if (kw(t, "orçament", "orcament", "presid")) return "presidencia";
+  if (has(t, "lesão", "lesao", "lesion", "médico", "medico")) return "medico";
+  if (has(t, "contrat", "vend", "janela", "reforç", "salári", "valor")) return "diretor";
+  if (has(t, "escalação", "escalacao", "tática", "tatica", "treino tático")) return "auxiliar";
+  if (has(t, "adversár", "análise", "analise", "estatís")) return "analise";
+  if (has(t, "coletiva", "torcida", "imprensa")) return "imprensa";
+  if (has(t, "jovem", "base", "promov")) return "base";
+  if (has(t, "vestiário", "vestiario", "capitão", "capitao")) return "capitao";
+  if (has(t, "orçament", "orcament", "presid")) return "presidencia";
   return null;
 }
