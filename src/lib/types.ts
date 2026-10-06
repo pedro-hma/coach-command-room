@@ -116,6 +116,7 @@ export interface Meeting {
   tema: string;
   participantes: AgentId[];
   opinioes: { agente: AgentId; texto: string }[];
+  conversa?: { agente: AgentId | "treinador"; texto: string; ts: number }[];
   sintese: string;
   recomendacao: string;
   virouDecisao?: boolean;
