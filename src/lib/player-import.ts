@@ -12,9 +12,12 @@ function slug(value: string) {
 function fromRow(row: Record<string, unknown>, index: number): Player | null {
   const nome = String(row.nome ?? row.name ?? row.player ?? row["Nome"] ?? row["Name"] ?? "").trim();
   if (!nome) return null;
-  const pos = String(row.pos ?? row.position ?? row["Posição"] ?? row["Position"] ?? "—").trim();
-  const idade = Math.max(15, Math.min(60, Math.round(num(row.idade ?? row.age ?? row["Idade"] ?? row["Age"], 18))));
-  const overall = Math.max(1, Math.min(99, Math.round(num(row.overall ?? row.rating ?? row.OVR ?? row["Overall"], 50))));
+  const pos = String(row.pos ?? row.position ?? row["Posição"] ?? row["Position"] ?? "").trim();
+  const idadeRaw = row.idade ?? row.age ?? row["Idade"] ?? row["Age"];
+  const overallRaw = row.overall ?? row.rating ?? row.OVR ?? row["Overall"];
+  if (!pos || idadeRaw === undefined || overallRaw === undefined || idadeRaw === "" || overallRaw === "") return null;
+  const idade = Math.max(15, Math.min(60, Math.round(num(idadeRaw))));
+  const overall = Math.max(1, Math.min(99, Math.round(num(overallRaw))));
   const valorMercado = num(row.valorMercado ?? row.marketValue ?? row["Valor de mercado"] ?? row["Market Value"], 0);
   const valorTransferencia = num(row.valorTransferencia ?? row.transferFee ?? row["Valor de transferência"] ?? row["Transfer Fee"], 0);
   return {
