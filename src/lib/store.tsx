@@ -14,6 +14,7 @@ type Ctx = {
   addDecision: (d: Omit<Decision, "id" | "ts"> & { id?: string; ts?: number }) => void;
   addInbox: (i: Omit<InboxItem, "id" | "ts">) => void;
   addMeeting: (m: Omit<Meeting, "id" | "ts">) => Meeting;
+  updateMeeting: (id: string, patch: Partial<Meeting>) => void;
   addPlayer: (p: Player) => void;
   addFixture: (f: Omit<Fixture, "id">) => void;
   resetCareerData: () => void;
@@ -135,6 +136,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return meeting;
   }, []);
 
+  const updateMeeting = useCallback((id: string, patch: Partial<Meeting>) => {
+    setLocal((s) => ({ ...s, reunioes: s.reunioes.map((m) => m.id === id ? { ...m, ...patch } : m) }));
+  }, []);
+
   const addPlayer = useCallback((player: Player) => {
     setLocal((s) => {
       const normalizedName = player.nome.trim().toLocaleLowerCase("pt-BR");
@@ -184,9 +189,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Ctx>(() => ({
-    state, lastSavedAt, setState, addMessage, addDecision, addInbox, addMeeting, addPlayer, addFixture,
+    state, lastSavedAt, setState, addMessage, addDecision, addInbox, addMeeting, updateMeeting, addPlayer, addFixture,
     resetCareerData, deleteCareer, importJson, exportJson,
-  }), [state, lastSavedAt, setState, addMessage, addDecision, addInbox, addMeeting, addPlayer, addFixture, resetCareerData, deleteCareer, importJson, exportJson]);
+  }), [state, lastSavedAt, setState, addMessage, addDecision, addInbox, addMeeting, updateMeeting, addPlayer, addFixture, resetCareerData, deleteCareer, importJson, exportJson]);
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }

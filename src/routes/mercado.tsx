@@ -4,73 +4,41 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Target, MessageCircle, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/mercado")({
   component: Mercado,
   head: () => ({ meta: [
     { title: "Mercado — Central do Treinador" },
-    { name: "description", content: "Prioridade da janela, orçamento livre e alvos monitorados." },
+    { name: "description", content: "Mercado real da carreira, sem alvos fictícios." },
   ]}),
 });
 
-const alvos = [
-  { nome: "Pedro Sartori", pos: "MEI", idade: 24, overall: 78, valor: 4.2, clube: "Cruzeiro do Sul" },
-  { nome: "Adrian Vega", pos: "MEI", idade: 27, overall: 80, valor: 6.5, clube: "Grêmio Portuário" },
-  { nome: "Kaio Freitas", pos: "ZAG", idade: 23, overall: 75, valor: 3.0, clube: "Vila Nova FC" },
-  { nome: "Léo Ribas", pos: "ATA", idade: 26, overall: 79, valor: 5.8, clube: "Estrela do Vale" },
-];
-
 function Mercado() {
-  const { state, setState, addDecision } = useStore();
-  function definirPrioridade(p: any) {
+  const { state, setState } = useStore();
+  function prioridade(p: "goleiro" | "defesa" | "meio" | "ataque" | "indefinida") {
     setState((s) => ({ ...s, clube: { ...s.clube, prioridadeJanela: p } }));
-    addDecision({ titulo: "Prioridade da janela atualizada", descricao: `Nova prioridade: ${p}`, origem: "Mercado", impacto: { prioridade: p } });
-    toast.success("Prioridade atualizada");
+    toast.success("Prioridade da janela atualizada.");
   }
+  const prioridades = ["goleiro", "defesa", "meio", "ataque"] as const;
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-5">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">Orçamento livre</div>
-          <div className="mt-1 text-3xl font-black">R$ {(state.clube.orcamento/1_000_000).toFixed(1).replace(".",",")} mi</div>
-        </Card>
-        <Card className="p-5">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">Prioridade atual</div>
-          <div className="mt-1 text-3xl font-black uppercase">{state.clube.prioridadeJanela}</div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {(["goleiro","defesa","meio","ataque"] as const).map(p => (
-              <button key={p} onClick={() => definirPrioridade(p)} className="rounded-full border border-border bg-background/60 px-3 py-1 text-xs hover:border-primary/60 uppercase">{p}</button>
-            ))}
-          </div>
-        </Card>
-        <Card className="p-5">
-          <div className="text-xs uppercase tracking-widest text-muted-foreground">Alvos monitorados</div>
-          <div className="mt-1 text-3xl font-black">{alvos.length}</div>
-          <Link to="/chat/$agentId" params={{ agentId: "diretor" }}>
-            <Button variant="secondary" className="mt-2 w-full">Falar com Diretor Esportivo</Button>
-          </Link>
-        </Card>
+        <Card className="p-5"><div className="text-xs uppercase tracking-widest text-muted-foreground">Orçamento livre</div><div className="mt-1 text-3xl font-black">{new Intl.NumberFormat("pt-BR",{style:"currency",currency:state.clube.moeda ?? "EUR",notation:"compact",maximumFractionDigits:1}).format(state.clube.orcamento)}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase tracking-widest text-muted-foreground">Prioridade atual</div><div className="mt-1 text-3xl font-black uppercase">{state.clube.prioridadeJanela}</div><div className="mt-3 flex flex-wrap gap-2">{prioridades.map((p) => <button key={p} onClick={() => prioridade(p)} className="rounded-full border border-border bg-background/60 px-3 py-1.5 text-xs uppercase hover:border-primary/60">{p}</button>)}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase tracking-widest text-muted-foreground">Alvos reais</div><div className="mt-1 text-3xl font-black">0</div><Link to="/chat/$agentId" params={{agentId:"diretor"}}><Button variant="secondary" className="mt-2 w-full"><MessageCircle className="mr-2 h-4 w-4"/>Falar com Diretor Esportivo</Button></Link></Card>
       </div>
-
-      <Card className="p-5">
-        <h3 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Alvos</h3>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          {alvos.map((a) => (
-            <div key={a.nome} className="rounded-lg border border-border/60 bg-card/60 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-semibold">{a.nome}</div>
-                  <div className="text-xs text-muted-foreground">{a.pos} • {a.idade} anos • {a.clube}</div>
-                </div>
-                <Badge variant="secondary">OVR {a.overall}</Badge>
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="text-sm">R$ {a.valor.toFixed(1).replace(".",",")} mi</div>
-                <Button size="sm" onClick={() => toast.success(`Proposta enviada por ${a.nome}`)}>Fazer proposta</Button>
-              </div>
-            </div>
-          ))}
+      <Card className="border-dashed p-12 text-center">
+        <Target className="mx-auto h-12 w-12 text-muted-foreground" />
+        <h2 className="mt-4 text-xl font-bold">Mercado limpo</h2>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">Nenhum alvo foi pré-carregado. Isso é intencional: os jogadores desta carreira precisam vir do seu save ou de uma fonte de dados real.</p>
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <Link to="/elenco"><Button><Plus className="mr-2 h-4 w-4"/>Cadastrar/importar jogadores</Button></Link>
+          <Link to="/chat/$agentId" params={{agentId:"diretor"}}><Button variant="secondary">Discutir mercado com Rogério</Button></Link>
         </div>
+      </Card>
+      <Card className="p-5">
+        <div className="flex items-center gap-2"><Badge variant="outline">Regra de realismo</Badge><span className="text-sm text-muted-foreground">Uma proposta só pode aparecer depois que um alvo real for registrado.</span></div>
       </Card>
     </div>
   );

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Gavel, Mic, MicOff, PhoneOff, ScreenShare, Sparkles, Users2, Video, VideoOff } from "lucide-react";
+import { Bot, Gavel, MessageCircle, Mic, MicOff, PhoneOff, ScreenShare, Sparkles, Users2, Video, VideoOff } from "lucide-react";
 
 export const Route = createFileRoute("/reunioes")({
   component: Reunioes,
@@ -31,13 +31,14 @@ const TEMAS = [
 ];
 
 function Reunioes() {
-  const { state, addMeeting, addDecision } = useStore();
+  const { state, addMeeting, updateMeeting, addDecision } = useStore();
   const [tema, setTema] = useState(TEMAS[0]);
   const [selecionados, setSelecionados] = useState<AgentId[]>(["auxiliar", "diretor", "analise"]);
   const [reuniaoAtual, setReuniaoAtual] = useState<null | ReturnType<typeof addMeeting>>(null);
   const [carregando, setCarregando] = useState(false);
   const [microfone, setMicrofone] = useState(true);
   const [camera, setCamera] = useState(true);
+  const [fala, setFala] = useState("");
   const chamarIA = useServerFn(responderAgente);
 
   function toggle(id: AgentId) {
@@ -55,6 +56,59 @@ function Reunioes() {
       if (r.texto) return r.texto;
     } catch {}
     return generateReply(a, tema, { state });
+  }
+
+  async function reuniaoInterna() {
+    if (!tema.trim() || selecionados.length < 2) {
+      toast.error("Escolha um tema e ao menos 2 participantes.");
+      return;
+    }
+    setCarregando(true);
+    let conversa: { agente: AgentId; texto: string; ts: number }[] = [];
+    for (let rodada = 0; rodada < 2; rodada++) {
+      for (const a of selecionados) {
+        let texto = "";
+        try {
+          const r = await chamarIA({ data: {
+            persona: personaAgente(a, state.confianca[a]),
+            contexto: contextoClube(state),
+            pergunta: "Você está numa reunião interna da comissão, sem o treinador. Tema: " + tema + ". Reaja ao que os colegas acabaram de dizer. Você pode concordar, discordar, fazer uma ressalva ou levantar algo novo. Fale como " + AGENTS[a].nome + ", não como um assistente.",
+            historico: conversa.slice(-8).map((m) => ({ role: "user" as const, content: AGENTS[m.agente].nome + ": " + m.texto })),
+          }});
+          texto = r.texto ?? "";
+        } catch {}
+        if (!texto) texto = generateReply(a, tema, { state });
+        conversa.push({ agente: a, texto, ts: Date.now() });
+      }
+    }
+    const opinioes = selecionados.map((a) => ({ agente: a, texto: conversa.filter((m) => m.agente === a).at(-1)?.texto ?? "" }));
+    let sintese = sintetizar(tema, opinioes, state);
+    let rec = "A comissão deve levar o debate ao treinador antes de transformar a discussão em decisão.";
+    try {
+      const r = await chamarIA({ data: {
+        persona: "Você é o chefe de gabinete. Resuma uma reunião interna realista entre membros da comissão, sem inventar fatos.",
+        contexto: contextoClube(state),
+        pergunta: "Tema: " + tema + ". Conversa: " + conversa.map((m) => AGENTS[m.agente].nome + ": " + m.texto).join(" | ") + ". Faça uma síntese humana e depois escreva 'Recomendação:' com o ponto central.",
+        historico: [],
+      }});
+      if (r.texto) {
+        const partes = r.texto.split(/Recomenda[çc][ãa]o:/i);
+        sintese = partes[0].trim() || sintese;
+        rec = partes[1]?.trim() || rec;
+      }
+    } catch {}
+    const m = addMeeting({ tema, participantes: selecionados, opinioes, conversa, sintese, recomendacao: rec, formato: "video", duracaoMin: 30, inicio: Date.now(), status: "encerrada" });
+    setReuniaoAtual(m);
+    setCarregando(false);
+  }
+
+  function falarNaReuniao() {
+    if (!fala.trim() || !reuniaoAtual) return;
+    const turno = { agente: "treinador" as const, texto: fala.trim(), ts: Date.now() };
+    const conversa = [...(reuniaoAtual.conversa ?? []), turno];
+    setReuniaoAtual({ ...reuniaoAtual, conversa });
+    updateMeeting(reuniaoAtual.id, { conversa });
+    setFala("");
   }
 
   async function convocar() {
@@ -81,7 +135,8 @@ function Reunioes() {
       }
     } catch {}
     if (sintese === "A reunião terminou sem síntese automática.") sintese = sintetizar(tema, opinioes, state);
-    const m = addMeeting({ tema, participantes: selecionados, opinioes, sintese, recomendacao: rec, formato: "video", duracaoMin: 30, inicio: Date.now(), status: "encerrada" });
+    const conversa = opinioes.map((o) => ({ agente: o.agente, texto: o.texto, ts: Date.now() }));
+    const m = addMeeting({ tema, participantes: selecionados, opinioes, conversa, sintese, recomendacao: rec, formato: "video", duracaoMin: 30, inicio: Date.now(), status: "encerrada" });
     setReuniaoAtual(m);
     setCarregando(false);
   }
@@ -104,7 +159,11 @@ function Reunioes() {
             <div className="space-y-4">
               <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Pauta</label><Input className="mt-1" value={tema} onChange={(e) => setTema(e.target.value)} /><div className="mt-2 flex flex-wrap gap-2">{TEMAS.map((t) => <button key={t} onClick={() => setTema(t)} className="rounded-full border border-border bg-background/60 px-3 py-1.5 text-xs hover:border-primary/60">{t}</button>)}</div></div>
               <div><label className="text-xs uppercase tracking-widest text-muted-foreground">Participantes</label><div className="mt-2 grid gap-2 sm:grid-cols-2">{AGENT_ORDER.map((id) => { const a = AGENTS[id]; const on = selecionados.includes(id); return <button key={id} onClick={() => toggle(id)} className={`flex items-center gap-3 rounded-xl border p-3 text-left ${on ? "border-primary bg-primary/10" : "border-border bg-card/50"}`}><span className="grid h-9 w-9 place-items-center rounded-lg bg-secondary">{a.emoji}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{a.nome}</span><span className="block truncate text-xs text-muted-foreground">{a.cargo}</span></span>{on && <Badge>na chamada</Badge>}</button>; })}</div></div>
-              <Button className="w-full" disabled={carregando} onClick={convocar}>{carregando ? "Conectando participantes..." : "Entrar na chamada"}</Button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button disabled={carregando} onClick={convocar}>{carregando ? "Conectando..." : "Entrar na chamada"}</Button>
+                <Button variant="secondary" disabled={carregando} onClick={reuniaoInterna}><Bot className="mr-2 h-4 w-4" />Comissão conversa sozinha</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Na segunda opção, os agentes discutem entre si sem você participar e a conversa fica salva.</p>
             </div>
             <div className="rounded-2xl border border-border/60 bg-muted/20 p-5"><div className="text-xs uppercase tracking-widest text-muted-foreground">Antes de entrar</div><div className="mt-4 space-y-3 text-sm"><Check text="Pauta registrada antes da conversa" /><Check text="Cada participante recebe o contexto real da carreira" /><Check text="Fatos e recomendações ficam separados na ata" /><Check text="A reunião fica salva no histórico da carreira" /></div></div>
           </div>
@@ -120,6 +179,18 @@ function Reunioes() {
             <div className="flex flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-slate-900 p-3"><Button variant="secondary" size="icon" onClick={() => setMicrofone(!microfone)}>{microfone ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}</Button><Button variant="secondary" size="icon" onClick={() => setCamera(!camera)}>{camera ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}</Button><Button variant="secondary" size="icon"><ScreenShare className="h-4 w-4" /></Button><Button variant="destructive" size="icon" onClick={() => setReuniaoAtual(null)}><PhoneOff className="h-4 w-4" /></Button></div>
           </Card>
 
+          <div className="space-y-4">
+          <Card className="flex h-[430px] flex-col p-0 overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-border/60 p-4"><MessageCircle className="h-4 w-4 text-primary" /><div><div className="font-bold">Chat da reunião</div><div className="text-[10px] uppercase tracking-widest text-muted-foreground">{reuniaoAtual.conversa?.length ?? 0} falas</div></div></div>
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              {(reuniaoAtual.conversa ?? []).map((m, i) => {
+                const eu = m.agente === "treinador";
+                const a = eu ? null : AGENTS[m.agente];
+                return <div key={String(m.ts) + "-" + i} className={"flex " + (eu ? "justify-end" : "justify-start")}><div className={"max-w-[90%] rounded-2xl p-3 text-sm " + (eu ? "bg-primary text-primary-foreground" : "bg-muted/50")}>{!eu && <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-primary">{a?.nome}</div>}{m.texto}</div></div>;
+              })}
+            </div>
+            <div className="border-t border-border/60 p-3"><div className="flex gap-2"><Input value={fala} onChange={(e) => setFala(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") falarNaReuniao(); }} placeholder="Fale na reunião..." /><Button size="icon" onClick={falarNaReuniao}><MessageCircle className="h-4 w-4" /></Button></div></div>
+          </Card>
           <Card className="p-5">
             <div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /><h3 className="font-bold">Ata da reunião</h3></div>
             <div className="mt-4 text-xs uppercase tracking-widest text-muted-foreground">Síntese</div><p className="mt-2 text-sm">{reuniaoAtual.sintese}</p>
@@ -127,6 +198,7 @@ function Reunioes() {
             <Button onClick={virarDecisao} className="mt-4 w-full"><Gavel className="mr-2 h-4 w-4" />Registrar ponto como decisão</Button>
             <div className="mt-5 border-t border-border/60 pt-4"><div className="text-xs uppercase tracking-widest text-muted-foreground">Participantes</div><div className="mt-2 space-y-2">{reuniaoAtual.opinioes.map((o) => <div key={o.agente} className="rounded-lg bg-muted/30 p-2"><div className="text-xs font-semibold">{AGENTS[o.agente].nome}</div><div className="mt-1 text-xs text-muted-foreground">{o.texto}</div></div>)}</div></div>
           </Card>
+          </div>
         </div>
       )}
 
