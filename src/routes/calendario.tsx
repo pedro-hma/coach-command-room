@@ -68,7 +68,7 @@ function Calendario() {
           {passadas.length === 0 ? <Empty text="Nenhum resultado ainda. Registre o que aconteceu no FC26." /> : (
             <ul className="mt-3 space-y-2">{passadas.map(f => (
               <li key={f.id} className="rounded-xl border border-border/60 bg-card/60 p-3">
-                <div className="flex items-center justify-between gap-3"><div><div className="font-semibold">{f.casa ? "Você" : f.adversario} · {f.adversario}</div><div className="text-xs text-muted-foreground">{new Date(f.data).toLocaleDateString("pt-BR")} · {f.competicao}</div></div><div className="text-2xl font-black">{f.resultado}</div></div>
+                <div className="flex items-center justify-between gap-3"><div><div className="font-semibold">{f.casa ? "Você x " + f.adversario : f.adversario + " x Você"}</div><div className="text-xs text-muted-foreground">{new Date(f.data).toLocaleDateString("pt-BR")} · {f.competicao}</div></div><div className="text-2xl font-black">{f.resultado}</div></div>
                 {f.observacoes && <p className="mt-2 text-xs text-muted-foreground">{f.observacoes}</p>}
               </li>
             ))}</ul>
