@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
+import { createNewCareerState } from "@/lib/demo-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trophy } from "lucide-react";
@@ -11,11 +12,16 @@ export function Onboarding() {
   const [step, setStep] = useState(0);
 
   function finalizar() {
-    setState((s) => ({
-      ...s,
-      onboarded: true,
-      clube: { ...s.clube, nome, treinador },
-    }));
+    setState(() => {
+      const fresh = createNewCareerState();
+      fresh.onboarded = true;
+      fresh.clube = {
+        ...fresh.clube,
+        nome: nome.trim(),
+        treinador: treinador.trim(),
+      };
+      return fresh;
+    });
   }
 
   const steps = [
