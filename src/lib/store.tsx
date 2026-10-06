@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { ClubState, Decision, InboxItem, Meeting, Message, AgentId } from "./types";
 import { createNewCareerState } from "./demo-data";
 
-const KEY = "mundo-do-clube-v1";
+const KEY = "mundo-do-clube-v2";
 
 type Ctx = {
   state: ClubState;
