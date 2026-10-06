@@ -16,7 +16,7 @@ export const Route = createFileRoute("/configuracoes")({
 });
 
 function Config() {
-  const { state, setState, resetDemo, deleteCareer, exportJson, importJson } = useStore();
+  const { state, lastSavedAt, setState, resetCareerData, deleteCareer, exportJson, importJson } = useStore();
   const [nome, setNome] = useState(state.clube.nome);
   const [treinador, setTreinador] = useState(state.clube.treinador);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -117,11 +117,19 @@ function Config() {
             }}
           />
           <Button variant="outline" onClick={() => {
-            resetDemo();
-            toast.success("Dados da carreira resetados");
+            resetCareerData();
+            toast.success("Dados esportivos resetados; identidade da carreira preservada");
           }}>
-            <RefreshCw className="mr-2 h-4 w-4" />Resetar dados
+            <RefreshCw className="mr-2 h-4 w-4" />Resetar dados esportivos
           </Button>
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        <h3 className="text-lg font-bold">Persistência da sessão</h3>
+        <p className="mt-1 text-sm text-muted-foreground">A carreira é gravada localmente após cada alteração, novamente a cada 5 minutos e no fechamento/atualização da página.</p>
+        <div className="mt-3 rounded-xl bg-muted/30 p-3 text-sm">
+          Último salvamento: {lastSavedAt ? new Date(lastSavedAt).toLocaleString("pt-BR") : "aguardando primeiro salvamento"}
         </div>
       </Card>
     </div>

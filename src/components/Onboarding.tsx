@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
-import { createNewCareerState } from "@/lib/demo-data";
+import { createNewCareerState } from "@/lib/career-defaults";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trophy } from "lucide-react";

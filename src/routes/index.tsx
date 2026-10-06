@@ -55,7 +55,7 @@ function Painel() {
     ...s.inbox.map((i) => ({ id: i.id, ts: i.ts, tipo: "mensagem", titulo: i.assunto, detalhe: AGENTS[i.de].cargo })),
     ...s.calendario
       .filter((f) => f.jogado)
-      .map((f) => ({ id: f.id, ts: new Date(f.data).getTime(), tipo: "jogo", titulo: `${f.casa ? "Troyes" : f.adversario} ${f.resultado ?? ""} ${f.casa ? f.adversario : "Troyes"}`, detalhe: f.competicao })),
+      .map((f) => ({ id: f.id, ts: new Date(f.data).getTime(), tipo: "jogo", titulo: `${f.casa ? s.clube.nome : f.adversario} ${f.resultado ?? ""} ${f.casa ? f.adversario : s.clube.nome}`, detalhe: f.competicao })),
   ]
     .sort((a, b) => b.ts - a.ts)
     .slice(0, 7);
@@ -211,7 +211,11 @@ function Painel() {
             <TrendingUp className="h-4 w-4 text-primary" />
           </div>
           <div className="mt-4 space-y-2">
-            {ultimos.map((f) => (
+            {ultimos.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">
+                Nenhum resultado registrado nesta carreira.
+              </div>
+            ) : ultimos.map((f) => (
               <div key={f.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-border/60 p-3">
                 <div>
                   <p className="text-sm font-semibold">{f.adversario}</p>
@@ -221,10 +225,12 @@ function Painel() {
               </div>
             ))}
           </div>
-          <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
-            <div className="mb-1 flex items-center gap-2 font-semibold text-foreground"><MessageSquareText className="h-4 w-4 text-primary" /> Leitura da comissão</div>
-            O Troyes segue competitivo, mas a derrota para o Nantes e os gols sofridos em segundas bolas exigem uma resposta no próximo jogo em casa.
-          </div>
+          {ultimos.length > 0 && (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-foreground"><MessageSquareText className="h-4 w-4 text-primary" /> Leitura factual</div>
+              A comissão passa a ler somente resultados que foram registrados nesta carreira. Nenhum comentário de partida é pré-carregado.
+            </div>
+          )}
         </Card>
       </div>
     </div>
