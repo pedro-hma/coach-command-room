@@ -58,6 +58,12 @@ export interface Player {
   disponivelNoJogo?: boolean;
   idExterno?: { transfermarkt?: string; ea?: string; wikidata?: string };
   fonte?: DataSource;
+  origem?: "fc26" | "base_externa" | "manual";
+  valorTransferencia?: number;
+  moedaTransferencia?: "EUR" | "BRL";
+  clubeOrigem?: string;
+  dataTransferencia?: string;
+  observacoes?: string;
 }
 
 export interface Injury {
@@ -74,6 +80,14 @@ export interface Fixture {
   casa: boolean;
   resultado?: string;
   jogado?: boolean;
+  placarCasa?: number;
+  placarFora?: number;
+  posse?: number;
+  finalizacoes?: number;
+  finalizacoesNoAlvo?: number;
+  xg?: number;
+  observacoes?: string;
+  fonte?: DataSource;
 }
 
 export interface Decision {
@@ -105,6 +119,10 @@ export interface Meeting {
   sintese: string;
   recomendacao: string;
   virouDecisao?: boolean;
+  formato?: "video" | "presencial";
+  duracaoMin?: number;
+  inicio?: number;
+  status?: "agendada" | "em_andamento" | "encerrada";
 }
 
 export interface RenewalPending {
