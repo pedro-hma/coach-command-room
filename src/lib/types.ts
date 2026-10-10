@@ -64,6 +64,7 @@ export interface Player {
   clubeOrigem?: string;
   dataTransferencia?: string;
   observacoes?: string;
+  estatisticas?: { jogos: number; gols: number; assistencias: number };
 }
 
 export interface Injury {

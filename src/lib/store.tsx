@@ -16,6 +16,8 @@ type Ctx = {
   addMeeting: (m: Omit<Meeting, "id" | "ts">) => Meeting;
   updateMeeting: (id: string, patch: Partial<Meeting>) => void;
   addPlayer: (p: Player) => void;
+  updatePlayer: (id: string, patch: Partial<Player>) => void;
+  deletePlayer: (id: string) => void;
   addFixture: (f: Omit<Fixture, "id">) => void;
   resetCareerData: () => void;
   deleteCareer: () => void;
@@ -150,6 +152,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const updatePlayer = useCallback((id: string, patch: Partial<Player>) => {
+    setLocal((s) => ({ ...s, jogadores: s.jogadores.map((p) => p.id === id ? { ...p, ...patch, id: p.id } : p) }));
+  }, []);
+
+  const deletePlayer = useCallback((id: string) => {
+    setLocal((s) => ({ ...s, jogadores: s.jogadores.filter((p) => p.id !== id), lesoes: s.lesoes.filter((l) => l.jogadorId !== id), pendencias: s.pendencias.filter((p) => p.jogadorId !== id) }));
+  }, []);
+
   const addFixture = useCallback((fixture: Omit<Fixture, "id">) => {
     setLocal((s) => ({
       ...s,
@@ -189,9 +199,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Ctx>(() => ({
-    state, lastSavedAt, setState, addMessage, addDecision, addInbox, addMeeting, updateMeeting, addPlayer, addFixture,
+    state, lastSavedAt, setState, addMessage, addDecision, addInbox, addMeeting, updateMeeting, addPlayer, updatePlayer, deletePlayer, addFixture,
     resetCareerData, deleteCareer, importJson, exportJson,
-  }), [state, lastSavedAt, setState, addMessage, addDecision, addInbox, addMeeting, updateMeeting, addPlayer, addFixture, resetCareerData, deleteCareer, importJson, exportJson]);
+  }), [state, lastSavedAt, setState, addMessage, addDecision, addInbox, addMeeting, updateMeeting, addPlayer, updatePlayer, deletePlayer, addFixture, resetCareerData, deleteCareer, importJson, exportJson]);
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }
