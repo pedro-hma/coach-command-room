@@ -41,7 +41,8 @@ function Elenco() {
   const { state, addPlayer, updatePlayer, deletePlayer } = useStore();
   const [modal, setModal] = useState(false);
   const [draft, setDraft] = useState<Player>(vazio);
-  const [selected, setSelected] = useState<Player | null>(null);\n  const [editingId, setEditingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Player | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const jogadores = [...state.jogadores].sort((a, b) => b.overall - a.overall);
 
@@ -120,7 +121,16 @@ function Elenco() {
                     <div className="text-[9px] uppercase tracking-widest text-muted-foreground">OVR</div>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2">\n                  <div className="rounded-lg bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Jogos</div><div className="font-semibold">{p.estatisticas?.jogos ?? 0}</div></div>\n                  <div className="rounded-lg bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Gols</div><div className="font-semibold">{p.estatisticas?.gols ?? 0}</div></div>\n                  <div className="rounded-lg bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Assist.</div><div className="font-semibold">{p.estatisticas?.assistencias ?? 0}</div></div>\n                </div>\n                <div className="mt-3 flex gap-2">\n                  <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); setSelected(p); setDraft({ ...vazio, ...p, estatisticas: { jogos: p.estatisticas?.jogos ?? 0, gols: p.estatisticas?.gols ?? 0, assistencias: p.estatisticas?.assistencias ?? 0 } }); setEditingId(p.id); setModal(true); }}><Pencil className="mr-1 h-3 w-3" />Editar</Button>\n                  <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); if (window.confirm(`Excluir ${p.nome} do elenco? Essa ação não pode ser desfeita.`)) { deletePlayer(p.id); if (selected?.id === p.id) setSelected(null); toast.success(`${p.nome} excluído do elenco`); } }}><Trash2 className="mr-1 h-3 w-3" />Excluir</Button>\n                </div>\n                <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="rounded-lg bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Jogos</div><div className="font-semibold">{p.estatisticas?.jogos ?? 0}</div></div>
+                  <div className="rounded-lg bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Gols</div><div className="font-semibold">{p.estatisticas?.gols ?? 0}</div></div>
+                  <div className="rounded-lg bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Assist.</div><div className="font-semibold">{p.estatisticas?.assistencias ?? 0}</div></div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); setSelected(p); setDraft({ ...vazio, ...p, estatisticas: { jogos: p.estatisticas?.jogos ?? 0, gols: p.estatisticas?.gols ?? 0, assistencias: p.estatisticas?.assistencias ?? 0 } }); setEditingId(p.id); setModal(true); }}><Pencil className="mr-1 h-3 w-3" />Editar</Button>
+                  <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); if (window.confirm(`Excluir ${p.nome} do elenco? Essa ação não pode ser desfeita.`)) { deletePlayer(p.id); if (selected?.id === p.id) setSelected(null); toast.success(`${p.nome} excluído do elenco`); } }}><Trash2 className="mr-1 h-3 w-3" />Excluir</Button>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
                   <div className="rounded-lg bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Mercado</div><div className="font-semibold">{dinheiro(p.valorMercado, p.moedaValor)}</div></div>
                   <div className="rounded-lg bg-muted/30 p-2"><div className="text-xs text-muted-foreground">Transferência</div><div className="font-semibold">{dinheiro(p.valorTransferencia, p.moedaTransferencia)}</div></div>
                 </div>
@@ -146,11 +156,16 @@ function Elenco() {
               <Info label="Overall" value={String(selected.overall)} />
               <Info label="Potencial" value={selected.potencial ? String(selected.potencial) : "Não informado"} />
               <Info label="Mercado" value={dinheiro(selected.valorMercado, selected.moedaValor)} />
-              <Info label="Transferência" value={dinheiro(selected.valorTransferencia, selected.moedaTransferencia)} />\n              <Info label="Jogos" value={String(selected.estatisticas?.jogos ?? 0)} />\n              <Info label="Gols" value={String(selected.estatisticas?.gols ?? 0)} />\n              <Info label="Assistências" value={String(selected.estatisticas?.assistencias ?? 0)} />
+              <Info label="Transferência" value={dinheiro(selected.valorTransferencia, selected.moedaTransferencia)} />
+              <Info label="Jogos" value={String(selected.estatisticas?.jogos ?? 0)} />
+              <Info label="Gols" value={String(selected.estatisticas?.gols ?? 0)} />
+              <Info label="Assistências" value={String(selected.estatisticas?.assistencias ?? 0)} />
               <Info label="Clube de origem" value={selected.clubeOrigem ?? "Não informado"} />
               <Info label="Contrato" value={selected.contratoAte || "Não informado"} />
             </div>
-            <div className="mt-4 rounded-xl border border-border/60 p-4">\n              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"><ChartNoAxesCombined className="h-4 w-4" />Estatísticas da temporada</div>\n              <p className="mt-2 text-sm">Jogos: {selected.estatisticas?.jogos ?? 0} · Gols: {selected.estatisticas?.gols ?? 0} · Assistências: {selected.estatisticas?.assistencias ?? 0}</p>
+            <div className="mt-4 rounded-xl border border-border/60 p-4">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"><ChartNoAxesCombined className="h-4 w-4" />Estatísticas da temporada</div>
+              <p className="mt-2 text-sm">Jogos: {selected.estatisticas?.jogos ?? 0} · Gols: {selected.estatisticas?.gols ?? 0} · Assistências: {selected.estatisticas?.assistencias ?? 0}</p>
               <div className="text-xs uppercase tracking-widest text-muted-foreground">Leitura da carreira</div>
               <p className="mt-2 text-sm">Moral {selected.moral}/100 · Forma {selected.forma}/100 · Confiança {selected.confiancaTreinador ?? "—"}/100.</p>
               {selected.observacoes && <p className="mt-2 text-sm text-muted-foreground">{selected.observacoes}</p>}
@@ -175,7 +190,10 @@ function Elenco() {
               <Field label="Clube de origem"><Input value={draft.clubeOrigem ?? ""} onChange={(e) => set("clubeOrigem", e.target.value)} /></Field>
               <Field label="Data da transferência"><Input type="date" value={draft.dataTransferencia ?? ""} onChange={(e) => set("dataTransferencia", e.target.value)} /></Field>
               <Field label="Moral"><Input type="number" min={0} max={100} value={draft.moral} onChange={(e) => set("moral", Number(e.target.value))} /></Field>
-              <Field label="Forma"><Input type="number" min={0} max={100} value={draft.forma} onChange={(e) => set("forma", Number(e.target.value))} /></Field>\n              <Field label="Jogos"><Input type="number" min={0} value={draft.estatisticas?.jogos ?? 0} onChange={(e) => set("estatisticas", { jogos: Math.max(0, Number(e.target.value)), gols: draft.estatisticas?.gols ?? 0, assistencias: draft.estatisticas?.assistencias ?? 0 })} /></Field>\n              <Field label="Gols"><Input type="number" min={0} value={draft.estatisticas?.gols ?? 0} onChange={(e) => set("estatisticas", { jogos: draft.estatisticas?.jogos ?? 0, gols: Math.max(0, Number(e.target.value)), assistencias: draft.estatisticas?.assistencias ?? 0 })} /></Field>\n              <Field label="Assistências"><Input type="number" min={0} value={draft.estatisticas?.assistencias ?? 0} onChange={(e) => set("estatisticas", { jogos: draft.estatisticas?.jogos ?? 0, gols: draft.estatisticas?.gols ?? 0, assistencias: Math.max(0, Number(e.target.value)) })} /></Field>
+              <Field label="Forma"><Input type="number" min={0} max={100} value={draft.forma} onChange={(e) => set("forma", Number(e.target.value))} /></Field>
+              <Field label="Jogos"><Input type="number" min={0} value={draft.estatisticas?.jogos ?? 0} onChange={(e) => set("estatisticas", { jogos: Math.max(0, Number(e.target.value)), gols: draft.estatisticas?.gols ?? 0, assistencias: draft.estatisticas?.assistencias ?? 0 })} /></Field>
+              <Field label="Gols"><Input type="number" min={0} value={draft.estatisticas?.gols ?? 0} onChange={(e) => set("estatisticas", { jogos: draft.estatisticas?.jogos ?? 0, gols: Math.max(0, Number(e.target.value)), assistencias: draft.estatisticas?.assistencias ?? 0 })} /></Field>
+              <Field label="Assistências"><Input type="number" min={0} value={draft.estatisticas?.assistencias ?? 0} onChange={(e) => set("estatisticas", { jogos: draft.estatisticas?.jogos ?? 0, gols: draft.estatisticas?.gols ?? 0, assistencias: Math.max(0, Number(e.target.value)) })} /></Field>
             </div>
             <div className="mt-5 flex justify-end gap-2"><Button variant="secondary" onClick={() => { setModal(false); setEditingId(null); }}>Cancelar</Button><Button onClick={salvarManual}>{editingId ? "Salvar alterações" : "Adicionar ao elenco"}</Button></div>
           </Card>
