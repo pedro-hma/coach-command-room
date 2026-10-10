@@ -170,6 +170,10 @@ function Elenco() {
               <p className="mt-2 text-sm">Moral {selected.moral}/100 · Forma {selected.forma}/100 · Confiança {selected.confiancaTreinador ?? "—"}/100.</p>
               {selected.observacoes && <p className="mt-2 text-sm text-muted-foreground">{selected.observacoes}</p>}
             </div>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <Button variant="secondary" onClick={() => { setDraft({ ...vazio, ...selected, estatisticas: { jogos: selected.estatisticas?.jogos ?? 0, gols: selected.estatisticas?.gols ?? 0, assistencias: selected.estatisticas?.assistencias ?? 0 } }); setEditingId(selected.id); setModal(true); }}><Pencil className="mr-2 h-4 w-4" />Editar jogador</Button>
+              <Button variant="outline" onClick={() => setSelected(null)}>Fechar dossiê</Button>
+            </div>
           </Card>
         </div>
       )}
