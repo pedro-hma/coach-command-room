@@ -15,7 +15,9 @@ type Ctx = {
   addInbox: (i: Omit<InboxItem, "id" | "ts">) => void;
   addMeeting: (m: Omit<Meeting, "id" | "ts">) => Meeting;
   updateMeeting: (id: string, patch: Partial<Meeting>) => void;
-  addPlayer: (p: Player) => void;\n  updatePlayer: (id: string, patch: Partial<Player>) => void;\n  deletePlayer: (id: string) => void;
+  addPlayer: (p: Player) => void;
+  updatePlayer: (id: string, patch: Partial<Player>) => void;
+  deletePlayer: (id: string) => void;
   addFixture: (f: Omit<Fixture, "id">) => void;
   resetCareerData: () => void;
   deleteCareer: () => void;
@@ -150,7 +152,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const updatePlayer = useCallback((id: string, patch: Partial<Player>) => {\n    setLocal((s) => ({ ...s, jogadores: s.jogadores.map((p) => p.id === id ? { ...p, ...patch, id: p.id } : p) }));\n  }, []);\n\n  const deletePlayer = useCallback((id: string) => {\n    setLocal((s) => ({ ...s, jogadores: s.jogadores.filter((p) => p.id !== id), lesoes: s.lesoes.filter((l) => l.jogadorId !== id), pendencias: s.pendencias.filter((p) => p.jogadorId !== id) }));\n  }, []);\n\n  const addFixture = useCallback((fixture: Omit<Fixture, "id">) => {
+  const updatePlayer = useCallback((id: string, patch: Partial<Player>) => {
+    setLocal((s) => ({ ...s, jogadores: s.jogadores.map((p) => p.id === id ? { ...p, ...patch, id: p.id } : p) }));
+  }, []);
+
+  const deletePlayer = useCallback((id: string) => {
+    setLocal((s) => ({ ...s, jogadores: s.jogadores.filter((p) => p.id !== id), lesoes: s.lesoes.filter((l) => l.jogadorId !== id), pendencias: s.pendencias.filter((p) => p.jogadorId !== id) }));
+  }, []);
+
+  const addFixture = useCallback((fixture: Omit<Fixture, "id">) => {
     setLocal((s) => ({
       ...s,
       calendario: [...s.calendario, { ...fixture, id: `fixture-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }].sort(
